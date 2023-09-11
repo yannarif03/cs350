@@ -6,11 +6,6 @@
 #include <unistd.h>
 
 #include "timelib.h"
-unsigned long long get_clocks() {
-  unsigned int a,d;
-  __asm__ __volatile__("rdtsc":"=a" (a), "=d" (d));
-  return ((unsigned long long)d << 32) | a;
-}
 
 int main(int argc, char* argv[]) {
   long sec=atol(argv[1]);
@@ -33,4 +28,12 @@ int main(int argc, char* argv[]) {
     printf("try again!\n" );
   }
   return 0;
+}
+uint64_t get_clocks(){
+  unsigned int a,d;
+__asm__ __volatile__ (
+		      "rdtsc"
+		      : "=a" (a), "=d" (d)
+		      );
+  return (((uint64_t)d << 32) | a);
 }
