@@ -7,7 +7,14 @@
 
 #include "timelib.h"
 
+/* uint64_t get_clocks(){ */
+/*   uint32_t a,d; */
+/* __asm__ __volatile__ ("rdtsc": "=a" (a), "=d" (d)); */
+/*   return (((uint64_t)d << 32) | a); */
+/*   } */
+
 int main(int argc, char* argv[]) {
+  (void)argc;
   long sec=atol(argv[1]);
   long nsec=atol(argv[2]);
   char method= *argv[3];
@@ -16,24 +23,19 @@ int main(int argc, char* argv[]) {
     uint64_t x=get_elapsed_sleep(sec,nsec);
     printf("WaitMethod: %s\n","sleep");
     printf("WaitTime: %ld %ld\n",sec,nsec);
-    printf("ClocksElapsed: %ld\n", x);
-    printf("ClockSpeed: %ld\n", (1000000000*sec+nsec)/x);
+    printf("ClocksElapsed: %lu\n", x);
+    double time=(double)sec + (double)nsec/1e9;
+    printf("ClockSpeed: %.2f MHz\n", (x/(double)time)*1e-6);
   } else if (method=='b'){
     uint64_t x= get_elapsed_busywait(sec,nsec);
     printf("WaitMethod: %s\n", "busywait");
     printf("WaitTime: %ld %ld \n", sec,nsec);
-    printf("ClocksElapsed: %ld\n", x);
-    printf("ClockSpeed: %ld\n", (1000000000*sec+nsec)/x);
+    printf("ClocksElapsed: %lu\n", x);
+    double time=(double)sec + ((double)nsec)/1e9;
+    printf("time: %f\n x: %f\n",time,(double)x);
+    printf("ClockSpeed: %.2f MHz\n", (x/(double)time)*1e-6);
   } else {
     printf("try again!\n" );
   }
   return 0;
-}
-uint64_t get_clocks(){
-  unsigned int a,d;
-__asm__ __volatile__ (
-		      "rdtsc"
-		      : "=a" (a), "=d" (d)
-		      );
-  return (((uint64_t)d << 32) | a);
 }

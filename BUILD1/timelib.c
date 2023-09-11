@@ -22,6 +22,17 @@
 
 #include "timelib.h"
 
+#define get_clocks(clocks)			\
+  do{						\
+    uint32_t __clocks_hi, __clocks_lo;		\
+    __asm__ __volatile__("rdtsc":		\
+			 "=a" (__clocks_lo),	\
+			 "=d" (__clocks_hi)	\
+			 );						\
+  clocks = ((uint64_t)__clocks_hi)<<32|((uint64_t)__clocks_lo);\
+  }while(0)
+
+
 /* Return the number of clock cycles elapsed when waiting for
  * wait_time seconds using sleeping functions */
 /*uint64_t get_elapsed_sleep(int wait_time)
@@ -31,13 +42,15 @@
 
 uint64_t get_elapsed_sleep(long sec, long nsec){
   uint64_t bef, aft;
-  bef = get_clocks();
+  get_clocks(bef);
   struct timespec tim, tim2;
   tim.tv_sec = sec;
   tim.tv_nsec = nsec;
   nanosleep(&tim,&tim2);
-  aft=get_clocks();
-  return aft-bef;
+  get_clocks(aft);
+  if(aft>bef){
+    return aft-bef;
+  }
 }
 
 /* Return the number of clock cycles elapsed when waiting for
@@ -49,18 +62,21 @@ uint64_t get_elapsed_sleep(long sec, long nsec){
 
 uint64_t get_elapsed_busywait(long sec, long nsec){
   uint64_t bef, aft;
-  struct timespec start,end;
+  struct timespec start,end,diff,ref;
+  ref.tv_sec=sec;
+  ref.tv_nsec=nsec;
   clock_gettime(CLOCK_MONOTONIC,&start);
-  bef=get_clocks();
+  get_clocks(bef);
   clock_gettime(CLOCK_MONOTONIC,&end);
-  long secdiff=end.tv_sec-start.tv_sec;
-  long nsecdiff=end.tv_nsec-start.tv_sec;
-  while (1000000000*secdiff+nsecdiff<1000000000*sec+nsec) {
+  diff.tv_sec=end.tv_sec-start.tv_sec;
+  diff.tv_nsec=end.tv_nsec-start.tv_sec;
+  while (timespec_cmp(&ref,&diff)>0) {
     clock_gettime(CLOCK_MONOTONIC,&end);
-    long secdiff=end.tv_sec-start.tv_sec;
-    long nsecdiff=end.tv_nsec-start.tv_sec;
+    diff.tv_sec=end.tv_sec-start.tv_sec;
+    diff.tv_nsec=end.tv_nsec-start.tv_sec;
   }
-  aft=get_clocks();
+  get_clocks(aft);
+  printf("%ld\n%ld\n",bef,aft);
   return aft-bef;
 }
 

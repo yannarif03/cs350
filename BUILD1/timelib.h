@@ -31,7 +31,7 @@
 #define NANO_IN_SEC (1000*1000*1000)
 
 /* Macro wrapper for RDTSC instruction */
-#define get_clocks(clocks)						\
+					      
     /* IMPLEMENT ME! See lecture slides for inspiration. */
 
 /* Return the number of clock cycles elapsed when waiting for
