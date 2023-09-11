@@ -1,7 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
+#include <stdint.h>
 #include <stdlib.h>
-unsigned long long get_clocks(){
+#include <unistd.h>
+
+#include "timelib.h"
+unsigned long long get_clocks() {
   unsigned int a,d;
   __asm__ __volatile__("rdtsc":"=a" (a), "=d" (d));
   return ((unsigned long long)d << 32) | a;
@@ -41,11 +46,17 @@ int main(int argc, char* argv[]) {
   char method= *argv[3];
 
   if (method=='s') {
+    unsigned long long x=get_elapsed_sleep(sec,nsec);
     printf("WaitMethod: %s\n","sleep");
     printf("WaitTime: %ld %ld\n",sec,nsec);
-    printf("ClocksElapsed: %lld\n", get_elapsed_sleep(sec,nsec));
+    printf("ClocksElapsed: %lld\n", x);
+    printf("ClockSpeed: %ld\n", (1000000000*sec+nsec)/x);
   } else if (method=='b'){
-    printf("ClocksElapsed: %lld\n", get_elapsed_busywait(sec,nsec));
+    unsigned long long x= get_elapsed_busywait(sec,nsec);
+    printf("WaitMethod: %s\n", "busywait");
+    printf("WaitTime: %ld %ld \n", sec,nsec);
+    printf("ClocksElapsed: %lld\n", x);
+    printf("ClockSpeed: %ld\n", (1000000000*sec+nsec)/x);
   } else {
     printf("try again!\n" );
   }
