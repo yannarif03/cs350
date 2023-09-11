@@ -36,11 +36,11 @@
 
 /* Return the number of clock cycles elapsed when waiting for
  * wait_time seconds using sleeping functions */
-uint64_t get_elapsed_sleep(int wait_time);
+uint64_t get_elapsed_sleep(long sec, long nsec);
 
 /* Return the number of clock cycles elapsed when waiting for
  * wait_time seconds using busy-waiting functions */
-uint64_t get_elapsed_busywait(int wait_time);
+uint64_t get_elapsed_busywait(long sec, long nsec);
 
 /* Busywait for the amount of time described via the delay
  * parameter */

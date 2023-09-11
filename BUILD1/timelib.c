@@ -24,16 +24,44 @@
 
 /* Return the number of clock cycles elapsed when waiting for
  * wait_time seconds using sleeping functions */
-uint64_t get_elapsed_sleep(int wait_time)
+/*uint64_t get_elapsed_sleep(int wait_time)
 {
-	/* IMPLEMENT ME! */
+	/* IMPLEMENT ME! 
+	}*/
+
+uint64_t get_elapsed_sleep(long sec, long nsec){
+  uint64_t bef, aft;
+  bef = get_clocks();
+  struct timespec tim, tim2;
+  tim.tv_sec = sec;
+  tim.tv_nsec = nsec;
+  nanosleep(&tim,&tim2);
+  aft=get_clocks();
+  return aft-bef;
 }
 
 /* Return the number of clock cycles elapsed when waiting for
  * wait_time seconds using busy-waiting functions */
-uint64_t get_elapsed_busywait(int wait_time)
+/*uint64_t get_elapsed_busywait(int wait_time)
 {
-	/* IMPLEMENT ME! */
+	/* IMPLEMENT ME! 
+}*/
+
+uint64_t get_elapsed_busywait(long sec, long nsec){
+  uint64_t bef, aft;
+  struct timespec start,end;
+  clock_gettime(CLOCK_MONOTONIC,&start);
+  bef=get_clocks();
+  clock_gettime(CLOCK_MONOTONIC,&end);
+  long secdiff=end.tv_sec-start.tv_sec;
+  long nsecdiff=end.tv_nsec-start.tv_sec;
+  while (1000000000*secdiff+nsecdiff<1000000000*sec+nsec) {
+    clock_gettime(CLOCK_MONOTONIC,&end);
+    long secdiff=end.tv_sec-start.tv_sec;
+    long nsecdiff=end.tv_nsec-start.tv_sec;
+  }
+  aft=get_clocks();
+  return aft-bef;
 }
 
 /* Utility function to add two timespec structures together. The input
