@@ -76,7 +76,7 @@ uint64_t get_elapsed_busywait(long sec, long nsec){
     diff.tv_nsec=end.tv_nsec-start.tv_sec;
   }
   get_clocks(aft);
-  printf("%ld\n%ld\n",bef,aft);
+
   return aft-bef;
 }
 

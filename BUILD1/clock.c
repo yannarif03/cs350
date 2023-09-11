@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     printf("WaitTime: %ld %ld \n", sec,nsec);
     printf("ClocksElapsed: %lu\n", x);
     double time=(double)sec + ((double)nsec)/1e9;
-    printf("time: %f\n x: %f\n",time,(double)x);
+
     printf("ClockSpeed: %.2f MHz\n", (x/(double)time)*1e-6);
   } else {
     printf("try again!\n" );
