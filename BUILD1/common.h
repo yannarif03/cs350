@@ -27,11 +27,13 @@
 /* Request payload as sent by the client and received by the
  * server. */
 struct request {
-	/* ADD REQUEST FIELDS. */
+  uint64_t req_id;
+  timespec timestamp;
+  timespec req_len;
 };
 
 /* Response payload as sent by the server and received by the
  * client. */
 struct response {
-	/* ADD RESPONSE FIELDS. */
+  uint64_t res_id;
 };

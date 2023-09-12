@@ -47,7 +47,9 @@
  * with the client is interrupted. */
 static void handle_connection(int conn_socket)
 {
-	/* IMPLEMENT ME! */
+  while(/*socket_connection_alive*/){
+    
+  }
 }
 
 /* Template implementation of the main function for the FIFO
