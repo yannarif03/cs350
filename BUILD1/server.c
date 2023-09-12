@@ -47,9 +47,32 @@
  * with the client is interrupted. */
 static void handle_connection(int conn_socket)
 {
-  while(/*socket_connection_alive*/){
-    
+  int client_size;
+  client_size=sizeof(struct request);
+  int data;
+  struct timespec reciept, completion;
+  struct request clientreq;
+  while(1){
+    data=read(conn_socket,(struct request *) &clientreq ,client_size);
+    clock_gettime(CLOCK_REALTIME, &reciept);
+    if((data)=-1){
+      break;
+    }
+    get_elapsed_busywait(clientreq.timestamp.tv_sec,clientreq.timestamp.tv_nsec);
+    clock_gettime(CLOCK_REALTIME, &completion);
+    struct response clientres;
+    clientres.res_id=clientreq.req_id;
+    write(conn_socket,(struct response *) &clientres, sizeof(struct response));
+    int id;
+    double sentsec,lensec,recsec,compsec;
+    id=clientreq.req_id;
+    sentsec=clientreq.timestamp.tv_sec+clientreq.timestamp.tv_nsec*1e-9;
+    lensec=clientreq.req_len.tv_sec+clientreq.timestamp.tv_nsec*1e-9;
+    recsec=reciept.tv_sec+reciept.tv_nsec*1e-9;
+    compsec=completion.tv_sec+completion.tv_nsec*1e-9;
+    printf("R%d:%.6fs,%.6fs,%.6fs,%.6fs",id,sentsec,lensec,recsec,compsec);
   }
+  return;
 }
 
 /* Template implementation of the main function for the FIFO

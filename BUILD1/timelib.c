@@ -22,23 +22,8 @@
 
 #include "timelib.h"
 
-#define get_clocks(clocks)			\
-  do{						\
-    uint32_t __clocks_hi, __clocks_lo;		\
-    __asm__ __volatile__("rdtsc":		\
-			 "=a" (__clocks_lo),	\
-			 "=d" (__clocks_hi)	\
-			 );						\
-  clocks = ((uint64_t)__clocks_hi)<<32|((uint64_t)__clocks_lo);\
-  }while(0)
 
 
-/* Return the number of clock cycles elapsed when waiting for
- * wait_time seconds using sleeping functions */
-/*uint64_t get_elapsed_sleep(int wait_time)
-{
-	/* IMPLEMENT ME! 
-	}*/
 
 uint64_t get_elapsed_sleep(long sec, long nsec){
   uint64_t bef, aft;
@@ -48,17 +33,8 @@ uint64_t get_elapsed_sleep(long sec, long nsec){
   tim.tv_nsec = nsec;
   nanosleep(&tim,&tim2);
   get_clocks(aft);
-  if(aft>bef){
-    return aft-bef;
-  }
+  return aft-bef;
 }
-
-/* Return the number of clock cycles elapsed when waiting for
- * wait_time seconds using busy-waiting functions */
-/*uint64_t get_elapsed_busywait(int wait_time)
-{
-	/* IMPLEMENT ME! 
-}*/
 
 uint64_t get_elapsed_busywait(long sec, long nsec){
   uint64_t bef, aft;
@@ -76,7 +52,6 @@ uint64_t get_elapsed_busywait(long sec, long nsec){
     diff.tv_nsec=end.tv_nsec-start.tv_sec;
   }
   get_clocks(aft);
-
   return aft-bef;
 }
 
@@ -112,7 +87,7 @@ int timespec_cmp(struct timespec *a, struct timespec *b)
 
 /* Busywait for the amount of time described via the delay
  * parameter */
-uint64_t busywait_timespec(struct timespec delay)
+/*uint64_t busywait_timespec(struct timespec delay)
 {
-	/* IMPLEMENT ME! (Optional but useful) */
-}
+  
+}*/

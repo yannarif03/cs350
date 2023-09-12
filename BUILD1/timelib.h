@@ -31,6 +31,16 @@
 #define NANO_IN_SEC (1000*1000*1000)
 
 /* Macro wrapper for RDTSC instruction */
+
+#define get_clocks(clocks)			\
+  do{						\
+    uint32_t __clocks_hi, __clocks_lo;		\
+    __asm__ __volatile__("rdtsc":		\
+			 "=a" (__clocks_lo),	\
+			 "=d" (__clocks_hi)	\
+			 );						\
+  clocks = ((uint64_t)__clocks_hi)<<32|((uint64_t)__clocks_lo);\
+  }while(0)
 					      
     /* IMPLEMENT ME! See lecture slides for inspiration. */
 

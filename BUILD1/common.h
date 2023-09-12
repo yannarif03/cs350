@@ -28,8 +28,8 @@
  * server. */
 struct request {
   uint64_t req_id;
-  timespec timestamp;
-  timespec req_len;
+  struct timespec timestamp;
+  struct timespec req_len;
 };
 
 /* Response payload as sent by the server and received by the
