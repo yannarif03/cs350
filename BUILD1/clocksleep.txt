@@ -1,0 +1,50 @@
+WaitMethod: sleep
+WaitTime: 1 0
+ClocksElapsed: 2304765698
+ClockSpeed: 2304.77 MHz
+
+WaitMethod: sleep
+WaitTime: 2 0
+ClocksElapsed: 4608628788
+ClockSpeed: 2304.31 MHz
+
+WaitMethod: sleep
+WaitTime: 3 0
+ClocksElapsed: 6912708310
+ClockSpeed: 2304.24 MHz
+
+WaitMethod: sleep
+WaitTime: 4 0
+ClocksElapsed: 9216501754
+ClockSpeed: 2304.13 MHz
+
+WaitMethod: sleep
+WaitTime: 5 0
+ClocksElapsed: 11520719994
+ClockSpeed: 2304.14 MHz
+
+WaitMethod: sleep
+WaitTime: 6 0
+ClocksElapsed: 13824572518
+ClockSpeed: 2304.10 MHz
+
+WaitMethod: sleep
+WaitTime: 7 0
+ClocksElapsed: 16128730125
+ClockSpeed: 2304.10 MHz
+
+WaitMethod: sleep
+WaitTime: 8 0
+ClocksElapsed: 18433169296
+ClockSpeed: 2304.15 MHz
+
+WaitMethod: sleep
+WaitTime: 9 0
+ClocksElapsed: 20737360098
+ClockSpeed: 2304.15 MHz
+
+WaitMethod: sleep
+WaitTime: 10 0
+ClocksElapsed: 23043103456
+ClockSpeed: 2304.31 MHz
+

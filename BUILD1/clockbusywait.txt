@@ -1,0 +1,50 @@
+WaitMethod: busywait
+WaitTime: 1 0 
+ClocksElapsed: 453833707
+ClockSpeed: 453.83 MHz
+
+WaitMethod: busywait
+WaitTime: 2 0 
+ClocksElapsed: 4602313549
+ClockSpeed: 2301.16 MHz
+
+WaitMethod: busywait
+WaitTime: 3 0 
+ClocksElapsed: 6909326975
+ClockSpeed: 2303.11 MHz
+
+WaitMethod: busywait
+WaitTime: 4 0 
+ClocksElapsed: 9209668358
+ClockSpeed: 2302.42 MHz
+
+WaitMethod: busywait
+WaitTime: 5 0 
+ClocksElapsed: 11516303614
+ClockSpeed: 2303.26 MHz
+
+WaitMethod: busywait
+WaitTime: 6 0 
+ClocksElapsed: 13821807791
+ClockSpeed: 2303.63 MHz
+
+WaitMethod: busywait
+WaitTime: 7 0 
+ClocksElapsed: 16121763060
+ClockSpeed: 2303.11 MHz
+
+WaitMethod: busywait
+WaitTime: 8 0 
+ClocksElapsed: 18429305728
+ClockSpeed: 2303.66 MHz
+
+WaitMethod: busywait
+WaitTime: 9 0 
+ClocksElapsed: 20733891017
+ClockSpeed: 2303.77 MHz
+
+WaitMethod: busywait
+WaitTime: 10 0 
+ClocksElapsed: 23037814119
+ClockSpeed: 2303.78 MHz
+
