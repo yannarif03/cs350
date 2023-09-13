@@ -53,25 +53,33 @@ static void handle_connection(int conn_socket)
   struct timespec reciept, completion;
   struct request clientreq;
   while(1){
-    data=read(conn_socket,(struct request *) &clientreq ,client_size);
+
+    data=read(conn_socket,&clientreq ,client_size);
     clock_gettime(CLOCK_REALTIME, &reciept);
-    if((data)=-1){
+    if((data)<=0){
+
       break;
+      
     }
-    get_elapsed_busywait(clientreq.timestamp.tv_sec,clientreq.timestamp.tv_nsec);
+
+
+    get_elapsed_busywait(clientreq.req_len.tv_sec,clientreq.req_len.tv_nsec);
+
     clock_gettime(CLOCK_REALTIME, &completion);
     struct response clientres;
+
     clientres.res_id=clientreq.req_id;
     write(conn_socket,(struct response *) &clientres, sizeof(struct response));
     int id;
     double sentsec,lensec,recsec,compsec;
     id=clientreq.req_id;
     sentsec=clientreq.timestamp.tv_sec+clientreq.timestamp.tv_nsec*1e-9;
-    lensec=clientreq.req_len.tv_sec+clientreq.timestamp.tv_nsec*1e-9;
+    lensec=clientreq.req_len.tv_sec+clientreq.req_len.tv_nsec*1e-9;
     recsec=reciept.tv_sec+reciept.tv_nsec*1e-9;
     compsec=completion.tv_sec+completion.tv_nsec*1e-9;
     printf("R%d:%.6fs,%.6fs,%.6fs,%.6fs",id,sentsec,lensec,recsec,compsec);
   }
+
   return;
 }
 
@@ -115,7 +123,7 @@ int main (int argc, char ** argv) {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(socket_port);
 	addr.sin_addr = any_address;
-
+	
 	/* Attempt to bind the socket with the given parameters */
 	retval = bind(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 
@@ -146,6 +154,7 @@ int main (int argc, char ** argv) {
 	}
 
 	/* Ready to handle the new connection with the client. */
+
 	handle_connection(accepted);
 
 	close(sockfd);
