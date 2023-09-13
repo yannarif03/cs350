@@ -55,7 +55,7 @@ static void handle_connection(int conn_socket)
   while(1){
 
     data=read(conn_socket,&clientreq ,client_size);
-    clock_gettime(CLOCK_REALTIME, &reciept);
+    clock_gettime(CLOCK_MONOTONIC, &reciept);
     if((data)<=0){
 
       break;
@@ -65,7 +65,7 @@ static void handle_connection(int conn_socket)
 
     get_elapsed_busywait(clientreq.req_len.tv_sec,clientreq.req_len.tv_nsec);
 
-    clock_gettime(CLOCK_REALTIME, &completion);
+    clock_gettime(CLOCK_MONOTONIC, &completion);
     struct response clientres;
 
     clientres.res_id=clientreq.req_id;
@@ -77,7 +77,7 @@ static void handle_connection(int conn_socket)
     lensec=clientreq.req_len.tv_sec+clientreq.req_len.tv_nsec*1e-9;
     recsec=reciept.tv_sec+reciept.tv_nsec*1e-9;
     compsec=completion.tv_sec+completion.tv_nsec*1e-9;
-    printf("R[%d]:%.6fs,%.6fs,%.6fs,%.6fs\n",id,sentsec,lensec,recsec,compsec);
+    printf("R[%d],%.6fs,%.6fs,%.6fs,%.6fs\n",id,sentsec,lensec,recsec,compsec);
   }
 
   return;
