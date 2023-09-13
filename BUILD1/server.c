@@ -77,7 +77,7 @@ static void handle_connection(int conn_socket)
     lensec=clientreq.req_len.tv_sec+clientreq.req_len.tv_nsec*1e-9;
     recsec=reciept.tv_sec+reciept.tv_nsec*1e-9;
     compsec=completion.tv_sec+completion.tv_nsec*1e-9;
-    printf("R%d:%.6fs,%.6fs,%.6fs,%.6fs",id,sentsec,lensec,recsec,compsec);
+    printf("R[%d]:%.6fs,%.6fs,%.6fs,%.6fs\n",id,sentsec,lensec,recsec,compsec);
   }
 
   return;
