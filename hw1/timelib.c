@@ -41,8 +41,9 @@ uint64_t get_elapsed_busywait(long sec, long nsec){
   struct timespec start,end;
   clock_gettime(CLOCK_MONOTONIC,&start);
   get_clocks(bef);
-  end.tv_sec=start.tv_sec+sec;
-  end.tv_nsec=start.tv_nsec+nsec;
+  end.tv_sec=sec;
+  end.tv_nsec=nsec;
+  timespec_add(&end, &start);
   while (timespec_cmp(&end,&start)>0) {
     clock_gettime(CLOCK_MONOTONIC,&start);
   }
