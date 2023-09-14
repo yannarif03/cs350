@@ -38,18 +38,13 @@ uint64_t get_elapsed_sleep(long sec, long nsec){
 
 uint64_t get_elapsed_busywait(long sec, long nsec){
   uint64_t bef, aft;
-  struct timespec start,end,diff,ref;
-  ref.tv_sec=sec;
-  ref.tv_nsec=nsec;
+  struct timespec start,end;
   clock_gettime(CLOCK_MONOTONIC,&start);
   get_clocks(bef);
-  clock_gettime(CLOCK_MONOTONIC,&end);
-  diff.tv_sec=end.tv_sec-start.tv_sec;
-  diff.tv_nsec=end.tv_nsec-start.tv_sec;
-  while (timespec_cmp(&ref,&diff)>0) {
-    clock_gettime(CLOCK_MONOTONIC,&end);
-    diff.tv_sec=end.tv_sec-start.tv_sec;
-    diff.tv_nsec=end.tv_nsec-start.tv_sec;
+  end.tv_sec=start.tv_sec+sec;
+  end.tv_nsec=start.tv_nsec+nsec;
+  while (timespec_cmp(&end,&start)>0) {
+    clock_gettime(CLOCK_MONOTONIC,&start);
   }
   get_clocks(aft);
   return aft-bef;
