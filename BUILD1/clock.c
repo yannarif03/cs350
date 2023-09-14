@@ -21,19 +21,19 @@ int main(int argc, char* argv[]) {
 
   if (method=='s') {
     uint64_t x=get_elapsed_sleep(sec,nsec);
-    printf("WaitMethod: %s\n","sleep");
+    printf("WaitMethod: %s\n","SLEEP");
     printf("WaitTime: %ld %ld\n",sec,nsec);
     printf("ClocksElapsed: %lu\n", x);
     double time=(double)sec + (double)nsec/1e9;
-    printf("ClockSpeed: %.2f MHz\n", (x/(double)time)*1e-6);
+    printf("ClockSpeed: %.2f\n", (x/(double)time)*1e-6);
   } else if (method=='b'){
     uint64_t x= get_elapsed_busywait(sec,nsec);
-    printf("WaitMethod: %s\n", "busywait");
+    printf("WaitMethod: %s\n", "BUSYWAIT");
     printf("WaitTime: %ld %ld \n", sec,nsec);
     printf("ClocksElapsed: %lu\n", x);
     double time=(double)sec + ((double)nsec)/1e9;
 
-    printf("ClockSpeed: %.2f MHz\n", (x/(double)time)*1e-6);
+    printf("ClockSpeed: %.2f\n", (x/(double)time)*1e-6);
   } else {
     printf("try again!\n" );
   }
