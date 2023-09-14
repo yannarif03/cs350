@@ -1,4 +1,4 @@
-request id,send time,request length,recieved time,completed time
+request id,send time,request length, recieved time,completed time
 R[0],26923.914657,0.041792,26923.914703,26923.914704
 R[1],26924.098071,0.133472,26924.098206,26924.133500
 R[2],26924.250986,0.018341,26924.251090,26924.251091
