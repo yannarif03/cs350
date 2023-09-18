@@ -14,11 +14,14 @@
 /*   } */
 
 int main(int argc, char* argv[]) {
+  //convert arguments into desired data types
   (void)argc;
   long sec=atol(argv[1]);
   long nsec=atol(argv[2]);
   char method= *argv[3];
-
+  /*depending on third argument input, use different get_elapsed
+  method and store the output in x.  use x and the input times to
+  compute the clockspeed in MHz. */
   if (method=='s') {
     uint64_t x=get_elapsed_sleep(sec,nsec);
     printf("WaitMethod: %s\n","SLEEP");
@@ -35,6 +38,8 @@ int main(int argc, char* argv[]) {
 
     printf("ClockSpeed: %.2f\n", (x/(double)time)*1e-6);
   } else {
+    //in case input method is wrong. if this weren't a problem set I
+    //would implement much more safeguards towards invalid inputs.
     printf("try again!\n" );
   }
   return 0;

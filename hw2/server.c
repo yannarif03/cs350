@@ -47,6 +47,20 @@
  * with the client is interrupted. */
 static void handle_connection(int conn_socket)
 {
+	int worker_main((void *) arg){
+		struct timespec curtime;
+		clock_gettime(CLOCK_MONOTONIC, &curtime);
+		double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
+		printf("[#WORKER#] %.6f Worker Thread Alive!",current);
+		while(1){
+			get_elapsed_busywait(1,0);
+			clock_gettime(CLOCK_MONOTONIC, &curtime);
+			double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
+			printf("[#WORKER#] %.6f Still Alive!",current);
+			sleep(1);
+		}
+		return 0;
+	}
 	//declare variables for reading from the socket
 	int client_size;
 	client_size=sizeof(struct request);
@@ -55,6 +69,7 @@ static void handle_connection(int conn_socket)
 	struct timespec reciept, completion;
 	struct request clientreq;
 	/*open infinite while loop as long as socket connection is alive*/
+	clone(&worker_main,malloc(4096),(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND), (void *) &data);
 	while(1){
 		//get data from connection, and start a timer noted by the time of
 		//request reciept
