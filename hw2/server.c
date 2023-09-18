@@ -28,10 +28,12 @@
 *     to the accompanying documentation and logs.
 *
 *******************************************************************************/
-
+#define _GNU_SOURCE
+#include <sched.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Include struct definitions and other libraries that need to be
  * included by both client and server */
@@ -47,7 +49,7 @@
  * with the client is interrupted. */
 static void handle_connection(int conn_socket)
 {
-	int worker_main((void *) arg){
+	int worker_main(void *arg){
 		struct timespec curtime;
 		clock_gettime(CLOCK_MONOTONIC, &curtime);
 		double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
@@ -55,7 +57,7 @@ static void handle_connection(int conn_socket)
 		while(1){
 			get_elapsed_busywait(1,0);
 			clock_gettime(CLOCK_MONOTONIC, &curtime);
-			double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
+			current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
 			printf("[#WORKER#] %.6f Still Alive!",current);
 			sleep(1);
 		}
@@ -69,7 +71,9 @@ static void handle_connection(int conn_socket)
 	struct timespec reciept, completion;
 	struct request clientreq;
 	/*open infinite while loop as long as socket connection is alive*/
-	clone(&worker_main,malloc(4096),(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND), (void *) &data);
+	
+	int res=clone(&worker_main,malloc(4096), CLONE_THREAD | CLONE_VM | CLONE_SIGHAND, (void *) &data);
+	printf("%d",res);
 	while(1){
 		//get data from connection, and start a timer noted by the time of
 		//request reciept
