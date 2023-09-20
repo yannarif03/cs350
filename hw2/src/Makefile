@@ -12,6 +12,7 @@
 #     - all: Compiles all modules
 #     - clock: Compiles the CPU clock measurement functions
 #     - server: Compiles the server executable
+#     - client: Compiles the client executable
 #     - clean: Removes compiled binaries and intermediate files
 #
 # Usage:
@@ -35,9 +36,9 @@
 ###############################################################################
 
 
-TARGETS = clock server
+TARGETS = server_mt server_q
 LIBS = timelib
-LDFLAGS = -lm
+LDFLAGS = -lm -lpthread
 BUILDDIR = build
 BUILD_TARGETS = $(addprefix $(BUILDDIR)/,$(TARGETS))
 OBJS = $(addprefix $(BUILDDIR)/,$(addsuffix .o,$(TARGETS) $(LIBS)))

@@ -50,6 +50,7 @@
 static void handle_connection(int conn_socket)
 {
 	int worker_main(void *arg){
+		(void)arg;
 		struct timespec curtime;
 		clock_gettime(CLOCK_MONOTONIC, &curtime);
 		double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
