@@ -58,7 +58,7 @@ static void handle_connection(int conn_socket)
 			get_elapsed_busywait(1,0);
 			clock_gettime(CLOCK_MONOTONIC, &curtime);
 			current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
-			printf("[#WORKER#] %.6f Still Alive!",current);
+			printf("[#WORKER#] %.6f Still Alive!\n",current);
 			sleep(1);
 		}
 		return 0;
@@ -72,7 +72,7 @@ static void handle_connection(int conn_socket)
 	struct request clientreq;
 	/*open infinite while loop as long as socket connection is alive*/
 	
-	int res=clone(&worker_main,malloc(4096), CLONE_THREAD | CLONE_VM | CLONE_SIGHAND, (void *) &data);
+	int res=clone(&worker_main,malloc(4096)+4096, CLONE_THREAD | CLONE_VM | CLONE_SIGHAND, (void *) &data);
 	printf("%d",res);
 	while(1){
 		//get data from connection, and start a timer noted by the time of
