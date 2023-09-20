@@ -47,23 +47,25 @@
 /* Main function to handle connection with the client. This function
  * takes in input conn_socket and returns only when the connection
  * with the client is interrupted. */
+int worker_main(void *arg){
+  (void)arg;
+  struct timespec curtime;
+  clock_gettime(CLOCK_MONOTONIC, &curtime);
+  double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
+  printf("[#WORKER#] %.6f Worker Thread Alive!\n",current);
+  while(1){
+    get_elapsed_busywait(1,0);
+    clock_gettime(CLOCK_MONOTONIC, &curtime);
+    current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
+    printf("[#WORKER#] %.6f Still Alive!\n",current);
+    sleep(1);
+  }
+  return 0;
+}
+
+
 static void handle_connection(int conn_socket)
 {
-	int worker_main(void *arg){
-		(void)arg;
-		struct timespec curtime;
-		clock_gettime(CLOCK_MONOTONIC, &curtime);
-		double current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
-		printf("[#WORKER#] %.6f Worker Thread Alive!",current);
-		while(1){
-			get_elapsed_busywait(1,0);
-			clock_gettime(CLOCK_MONOTONIC, &curtime);
-			current=curtime.tv_sec+((double)curtime.tv_nsec/1e9);
-			printf("[#WORKER#] %.6f Still Alive!\n",current);
-			sleep(1);
-		}
-		return 0;
-	}
 	//declare variables for reading from the socket
 	int client_size;
 	client_size=sizeof(struct request);
