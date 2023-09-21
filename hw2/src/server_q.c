@@ -67,6 +67,7 @@ struct queue {
 	int head;
 	int tail;
 	struct request items[QUEUE_SIZE];
+	int size;
 };
 
 
@@ -90,6 +91,7 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 		the_queue->tail+=1;
 		the_queue->items[the_queue->tail]=to_add;
 		retval=0;
+		the_queue->size+=1;
 	}
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
@@ -116,6 +118,7 @@ struct request get_from_queue(struct queue * the_queue)
 	}else{
 		retval=the_queue->items[the_queue->head];
 		the_queue->head+=1;
+		the_queue->size-=1;
 		if(the_queue->head==QUEUE_SIZE){
 			the_queue->head=0;
 		}
@@ -137,16 +140,22 @@ void dump_queue_status(struct queue * the_queue)
 
 	/* WRITE YOUR CODE HERE! */
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
-	printf("Q:[");
-	int end=the_queue->tail;
+
+
+	int end=the_queue->size;
+	printf("Q:[%d",end);
 	int start=the_queue->head;
-	for (i=start;(i<=end);i++){
-	  printf("R%d",i);
-	  if(i!=the_queue->tail){
-	    printf(",");
-	  }else{
-	    printf("]\n");
-	  }
+	int id;
+	for (i=start;(i<end);i++){
+		i=i%QUEUE_SIZE;
+		id=the_queue->items[i].req_id;
+		printf("R%d",id);
+		if(i!=the_queue->tail){
+			printf(",");
+		}else{
+			printf("]\n");
+		}
+	  
 	  
 	}
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
