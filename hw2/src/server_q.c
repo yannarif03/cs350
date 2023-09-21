@@ -88,8 +88,12 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 	if(next_write==the_queue->head){
 		retval=-1;
 	}else{
+	
+		the_queue->items[next_write]=to_add;
 		the_queue->tail+=1;
-		the_queue->items[the_queue->tail]=to_add;
+		if(the_queue->tail==QUEUE_SIZE){
+			the_queue->tail=0;
+		}
 		retval=0;
 		the_queue->size+=1;
 	}
@@ -143,21 +147,21 @@ void dump_queue_status(struct queue * the_queue)
 
 
 	int end=the_queue->size;
-	printf("Q:[%d",end);
+	printf("Q:[");
 	int start=the_queue->head;
 	int id;
-	for (i=start;(i<end);i++){
+	int j=0;
+	
+	for (i=start;(j<end);i++){
 		i=i%QUEUE_SIZE;
+		j++;
 		id=the_queue->items[i].req_id;
 		printf("R%d",id);
-		if(i!=the_queue->tail){
+		if(j!=end){
 			printf(",");
-		}else{
-			printf("]\n");
 		}
-	  
-	  
 	}
+	printf("]\n");
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
 	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
