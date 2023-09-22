@@ -76,7 +76,7 @@ static void handle_connection(int conn_socket)
 	/*open infinite while loop as long as socket connection is alive*/
 	
 	int res=clone(&worker_main,malloc(4096)+4096, CLONE_THREAD | CLONE_VM | CLONE_SIGHAND, (void *) &data);
-	printf("%d",res);
+	(void)res;
 	while(1){
 		//get data from connection, and start a timer noted by the time of
 		//request reciept
