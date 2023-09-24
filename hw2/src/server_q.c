@@ -70,7 +70,7 @@ struct queue {
 	int size;
 };
 
-
+int first=1;
 /* Add a new request <request> to the shared queue <the_queue> */
 int add_to_queue(struct request to_add, struct queue * the_queue)
 {
@@ -81,11 +81,20 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 
 	/* WRITE YOUR CODE HERE! */
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
-	int next_write=the_queue->tail+1;
+	int next_write;
+	/* if(first==1){ */
+	/*   first=0 */
+	/*   next_write=the_queue->tail; */
+	/* }else{ */
+	/*   the_queue->tail+=1;	   */
+	/*   next_write=the_queue->tail; */
+
+	/* } */
+	next_write=the_queue->tail;
 	if(next_write==QUEUE_SIZE){
 		next_write=0;
 	}
-	if(next_write==the_queue->head){
+	if(next_write==the_queue->head && first!=1){
 		retval=-1;
 	}else{
 	
@@ -94,6 +103,7 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 		if(the_queue->tail==QUEUE_SIZE){
 			the_queue->tail=0;
 		}
+		
 		retval=0;
 		the_queue->size+=1;
 	}
@@ -184,6 +194,10 @@ int worker_main(void *args){
 	struct response clientres;
 	while(1){
 		curreq=get_from_queue(queue);
+		/* if(TSPEC_TO_DOUBLE(curreq.timestamp)==0){ */
+		/*   continue; */
+		/* } */
+		
 		clock_gettime(CLOCK_MONOTONIC,&start);
 		get_elapsed_busywait(curreq.req_len.tv_sec,curreq.req_len.tv_nsec);
 		clock_gettime(CLOCK_MONOTONIC,&completion);
@@ -237,9 +251,10 @@ void handle_connection(int conn_socket)
 		if(data<=0){
 			break;
 		}
+
 		clock_gettime(CLOCK_MONOTONIC,&reciept);
 		add_to_queue(clientreq,the_queue);
-	}
+			}
 	free(the_queue);
 	
 	
