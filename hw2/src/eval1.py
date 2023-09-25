@@ -6,7 +6,6 @@ data=pd.read_csv("mtout.csv",engine="python",sep="[,:]");
 print(data.iloc[1,3]-data.iloc[0,3])
 #sort reqlens into time brackets, make bar graph. goodnight.
 
-#good evening. lets get to work
 
 index=max(data['length'])
 print(index//0.005)
@@ -17,33 +16,46 @@ print(len(values))
 for i in range(len(data['length'])):
     values[int(data.iloc[i,2]//0.005)]+=1/1000
 plt.plot(bins,values)
+
+#normal values
 normvals=np.random.normal(1/10,1,size=10000)
 normvals.sort()
 
 
 norm=lambda x: (1/(1*math.sqrt(2*np.pi))*math.exp(-1/2*((x-0.1)/1)**2))
 x=[norm(val) for val in normvals]
-#x=[val/1000 for val in x]
+x=[val/4 for val in x]
 
 plt.plot(normvals,x)
 
 #exponential values
 
-expvals=np.random.exponential(10,size=10000)
+expvals=np.random.exponential(1/10,size=10000)
 expvals.sort()
 
-norm=lambda x: 10*math.exp(-10*x)
+norm=lambda x: 1/10*math.exp(-10*x)
 x=[norm(val) for val in expvals]
 
 
-#x=[val/1000 for val in x]
-#plt.plot(expvals,x)
-#print(sum(x))
-#plt.plot([i for i in range(10000)],[np.random.normal(1/10,1) for i in range(10000)])
-#plt.plot([i for i in range(10000)],[np.random.exponential(1/10) for i in range(10000)])
+x=[val/1.5 for val in x]
+plt.plot(expvals,x)
 
-         
-               
+#uniform values
+
+
+univals=np.random.uniform(-8/10,1,size=10000)
+univals.sort()
+
+uni=lambda x,y: 1/(y-x)
+x=[uni(-0.8,1) for val in univals]
+
+
+x=[val/10 for val in x]
+plt.plot(univals,x)
+plt.axvline(-0.8,ymin=0.05,ymax=x[0]/0.1,color="r")
+plt.axvline(1,ymin=0.05,ymax=x[0]/0.1,color="r")
+plt.axhline(y=0,xmax=3.2/8,color="r")
+plt.axhline(y=0,xmin=5/8,color="r")
 
 # Set the heights of the bars to the normalized values
 #plt.yticks([i for i in plt.yticks()[0]], [f'{i/1000}' for i in plt.yticks()[0]])
