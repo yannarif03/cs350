@@ -9,7 +9,7 @@ qsizes=[]
 utils=[]
 for i in range(1,16):
     data=open(f"pyout/pydat{i}.txt","r")
-    qsizes.append(data.readline()[1:5])
+    qsizes.append(data.readline()[:4])
     restimes.append(data.readline()[1:5])
     utils.append(data.readline()[1:5])
 
