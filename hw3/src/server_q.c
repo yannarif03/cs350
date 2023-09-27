@@ -61,18 +61,22 @@ sem_t * queue_notify;
 /* END - Variables needed to protect the shared queue. DO NOT TOUCH */
 
 /* Max number of requests that can be queued */
-#define QUEUE_SIZE 500
-
+#define QUEUE_MAX 1500
+int QUEUE_SIZE;
+struct meta_req {
+	struct request req;
+	struct timespec reciept;
+};
 struct queue {
 	int head;
 	int tail;
-	struct request items[QUEUE_SIZE];
+	struct meta_req items[QUEUE_MAX];
 	int size;
 };
 
 int first=1;
 /* Add a new request <request> to the shared queue <the_queue> */
-int add_to_queue(struct request to_add, struct queue * the_queue)
+int add_to_queue(struct meta_req to_add, struct queue * the_queue)
 {
 	int retval = 0;
 	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
@@ -91,7 +95,6 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 		next_write=(the_queue->tail+1)%QUEUE_SIZE;
 		if(next_write==the_queue->head){
 			retval=-1;
-			printf("problem:head-%d,next-%d\n",the_queue->head,next_write);
 		}else{
 			the_queue->items[next_write]=to_add;
 			the_queue->tail=(the_queue->tail+1)%QUEUE_SIZE;
@@ -108,9 +111,9 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 }
 
 /* Add a new request <request> to the shared queue <the_queue> */
-struct request get_from_queue(struct queue * the_queue)
+struct meta_req get_from_queue(struct queue * the_queue)
 {
-	struct request retval;
+	struct meta_req retval;
 	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
 	sem_wait(queue_notify);
 	sem_wait(queue_mutex);
@@ -158,7 +161,7 @@ void dump_queue_status(struct queue * the_queue)
 	for (i=start;(j<end);i++){
 		i=i%QUEUE_SIZE;
 		j++;
-		id=the_queue->items[i].req_id;
+		id=the_queue->items[i].req.req_id;
 		printf("R%d",id);
 		if(j!=end){
 			printf(",");
@@ -182,7 +185,7 @@ int worker_main(void *args){
 	struct clargs* targs=(struct clargs*)args;
 	struct queue *queue=targs->q;
 	int conn_socket=targs->socket;
-	struct request curreq;
+	struct meta_req curreq;
 	struct timespec start,completion;
 	struct response clientres;
 	while(1){
@@ -192,14 +195,15 @@ int worker_main(void *args){
 		/* } */
 		
 		clock_gettime(CLOCK_MONOTONIC,&start);
-		get_elapsed_busywait(curreq.req_len.tv_sec,curreq.req_len.tv_nsec);
+		get_elapsed_busywait(curreq.req.req_len.tv_sec,curreq.req.req_len.tv_nsec);
 		clock_gettime(CLOCK_MONOTONIC,&completion);
-		clientres.res_id=curreq.req_id;
+		clientres.res_id=curreq.req.req_id;
+		clientres.accepted=0;
 		write(conn_socket,(struct response *) &clientres,sizeof(struct response));
-		int id=curreq.req_id;
-		double sent_time=TSPEC_TO_DOUBLE(curreq.timestamp);
-		double sent_len=TSPEC_TO_DOUBLE(curreq.req_len);
-		double rectime=TSPEC_TO_DOUBLE(reciept);
+		int id=curreq.req.req_id;
+		double sent_time=TSPEC_TO_DOUBLE(curreq.req.timestamp);
+		double sent_len=TSPEC_TO_DOUBLE(curreq.req.req_len);
+		double rectime=TSPEC_TO_DOUBLE(curreq.reciept);
 		double starttime=TSPEC_TO_DOUBLE(start);
 		double comptime=(TSPEC_TO_DOUBLE(completion));
 		printf("R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",id,sent_time,sent_len,rectime,starttime,comptime);
@@ -239,16 +243,28 @@ void handle_connection(int conn_socket)
 	client_size=sizeof(struct request);
 	int data;
 	
-	struct request clientreq;
+	struct meta_req clientreq;
 	while(1){
-		data=read(conn_socket, &clientreq,client_size);
+		data=read(conn_socket, &clientreq.req,client_size);
 		if(data<=0){
 			break;
 		}
 
-		clock_gettime(CLOCK_MONOTONIC,&reciept);
-		add_to_queue(clientreq,the_queue);
-			}
+		clock_gettime(CLOCK_MONOTONIC,&clientreq.reciept);
+		int status=add_to_queue(clientreq,the_queue);
+		struct response rej_res;
+		if(status==-1){
+			rej_res.res_id=clientreq.req.req_id;
+			rej_res.accepted=1;
+			write(conn_socket, &rej_res,sizeof(struct response));
+			printf("X%lu,%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
+			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
+			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
+			       TSPEC_TO_DOUBLE(clientreq.reciept));
+			dump_queue_status(the_queue);
+		}
+		
+	}
 	free(the_queue);
 	
 	
@@ -265,12 +281,12 @@ int main (int argc, char ** argv) {
 	struct sockaddr_in addr, client;
 	struct in_addr any_address;
 	socklen_t client_len;
-	/*if(getopt(argc,argv,"q:")!='q'){
-	  perror("Please Specify Queue Size using -q param");
+	if(getopt(argc,argv,"q:")!='q'){
+	  perror("Please Specify Queue Size using -q param\n");
 	  return EXIT_FAILURE;
 	}
-	int QUEUE_SIZE=strtol(optval);
-	*/
+	QUEUE_SIZE=strtol(optarg,NULL,0);
+	
 	/* Get port to bind our socket to */
 
 	/* Get port to bind our socket to */

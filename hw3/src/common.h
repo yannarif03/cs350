@@ -36,5 +36,5 @@ struct request {
  * client. */
 struct response {
   uint64_t res_id;
-  //uint8_t accepted;
+  uint8_t accepted;
 };
