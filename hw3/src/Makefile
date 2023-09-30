@@ -10,9 +10,8 @@
 #
 # Targets:
 #     - all: Compiles all modules
-#     - clock: Compiles the CPU clock measurement functions
-#     - server: Compiles the server executable
-#     - client: Compiles the client executable
+#     - server_lim: Compiles the server w/ limited queue executable
+#     - server_multi: Compiles the multithreaded server executable
 #     - clean: Removes compiled binaries and intermediate files
 #
 # Usage:
@@ -26,7 +25,7 @@
 #     Boston University
 #
 # Creation Date:
-#     September 10, 2023
+#     September 29, 2023
 #
 # Notes:
 #     Ensure you have the necessary dependencies and permissions before
@@ -36,7 +35,7 @@
 ###############################################################################
 
 
-TARGETS = server_mt server_q
+TARGETS = server_lim server_multi
 LIBS = timelib
 LDFLAGS = -lm -lpthread
 BUILDDIR = build

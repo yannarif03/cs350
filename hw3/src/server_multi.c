@@ -61,18 +61,27 @@ sem_t * queue_notify;
 /* END - Variables needed to protect the shared queue. DO NOT TOUCH */
 
 /* Max number of requests that can be queued */
-#define QUEUE_SIZE 500
+#define QUEUE_MAX 1500
+int QUEUE_SIZE;
+struct connection_params{
+	long queue_size;
+	int thread_num;
+};
 
+struct meta_req {
+	struct request req;
+	struct timespec reciept;
+};
 struct queue {
 	int head;
 	int tail;
-	struct request items[QUEUE_SIZE];
+	struct meta_req items[QUEUE_MAX];
 	int size;
 };
 
 int first=1;
 /* Add a new request <request> to the shared queue <the_queue> */
-int add_to_queue(struct request to_add, struct queue * the_queue)
+int add_to_queue(struct meta_req to_add, struct queue * the_queue)
 {
 	int retval = 0;
 	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
@@ -82,34 +91,37 @@ int add_to_queue(struct request to_add, struct queue * the_queue)
 	/* WRITE YOUR CODE HERE! */
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
 	int next_write;
-	if(the_queue->size==0){
-		the_queue->head=the_queue->tail=0;
-		the_queue->items[0]=to_add;
-		the_queue->size+=1;
-		retval=0;
+	next_write=(the_queue->tail+1)%QUEUE_SIZE;	
+	if(next_write==the_queue->head){
+		retval=-1;
 	}else{
-		next_write=(the_queue->tail+1)%QUEUE_SIZE;
-		if(next_write==the_queue->head){
-			retval=-1;
+	  
+		if(the_queue->size==0){
+			the_queue->head=the_queue->tail=0;
+			the_queue->items[0]=to_add;
+			the_queue->size+=1;
+			retval=0;
 		}else{
 			the_queue->items[next_write]=to_add;
 			the_queue->tail=(the_queue->tail+1)%QUEUE_SIZE;
 			retval=0;
 			the_queue->size+=1;
+			
 			//printf("head: %d, tail: %d, size: %d\n", the_queue->head, the_queue->tail, the_queue->size);
-	}
+		}
+		sem_post(queue_notify);
 	}
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
-	sem_post(queue_notify);
+
 	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
 	return retval;
 }
 
 /* Add a new request <request> to the shared queue <the_queue> */
-struct request get_from_queue(struct queue * the_queue)
+struct meta_req get_from_queue(struct queue * the_queue)
 {
-	struct request retval;
+	struct meta_req retval;
 	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
 	sem_wait(queue_notify);
 	sem_wait(queue_mutex);
@@ -157,7 +169,7 @@ void dump_queue_status(struct queue * the_queue)
 	for (i=start;(j<end);i++){
 		i=i%QUEUE_SIZE;
 		j++;
-		id=the_queue->items[i].req_id;
+		id=the_queue->items[i].req.req_id;
 		printf("R%d",id);
 		if(j!=end){
 			printf(",");
@@ -171,8 +183,9 @@ void dump_queue_status(struct queue * the_queue)
 
 struct clargs{
 	struct queue * q;
-	//struct timespec rec;
+	int thread_id;
 	int socket;
+        int worker_done;
 };
 struct timespec reciept;
 /* Main logic of the worker thread */
@@ -181,27 +194,28 @@ int worker_main(void *args){
 	struct clargs* targs=(struct clargs*)args;
 	struct queue *queue=targs->q;
 	int conn_socket=targs->socket;
-	struct request curreq;
+	struct meta_req curreq;
 	struct timespec start,completion;
 	struct response clientres;
-	while(1){
+	while(!targs->worker_done){
 		curreq=get_from_queue(queue);
 		/* if(TSPEC_TO_DOUBLE(curreq.timestamp)==0){ */
 		/*   continue; */
 		/* } */
 		
 		clock_gettime(CLOCK_MONOTONIC,&start);
-		get_elapsed_busywait(curreq.req_len.tv_sec,curreq.req_len.tv_nsec);
+		get_elapsed_busywait(curreq.req.req_len.tv_sec,curreq.req.req_len.tv_nsec);
 		clock_gettime(CLOCK_MONOTONIC,&completion);
-		clientres.res_id=curreq.req_id;
+		clientres.res_id=curreq.req.req_id;
+		clientres.accepted=0;
 		write(conn_socket,(struct response *) &clientres,sizeof(struct response));
-		int id=curreq.req_id;
-		double sent_time=TSPEC_TO_DOUBLE(curreq.timestamp);
-		double sent_len=TSPEC_TO_DOUBLE(curreq.req_len);
-		double rectime=TSPEC_TO_DOUBLE(reciept);
+		int id=curreq.req.req_id;
+		double sent_time=TSPEC_TO_DOUBLE(curreq.req.timestamp);
+		double sent_len=TSPEC_TO_DOUBLE(curreq.req.req_len);
+		double rectime=TSPEC_TO_DOUBLE(curreq.reciept);
 		double starttime=TSPEC_TO_DOUBLE(start);
 		double comptime=(TSPEC_TO_DOUBLE(completion));
-		printf("R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",id,sent_time,sent_len,rectime,starttime,comptime);
+		printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
 		dump_queue_status(queue);
 	}
 	return 0;
@@ -209,7 +223,9 @@ int worker_main(void *args){
 /* Main function to handle connection with the client. This function
  * takes in input conn_socket and returns only when the connection
  * with the client is interrupted. */
-void handle_connection(int conn_socket)
+
+
+void handle_connection(int conn_socket, struct connection_params conn_params)
 {
 	
 	struct queue * the_queue;
@@ -226,8 +242,13 @@ void handle_connection(int conn_socket)
 	struct clargs reqhand;
 	reqhand.q=the_queue;
 	reqhand.socket=conn_socket;
-	//how to share memory with child process for recieved timestamp?
-	clone(&worker_main,babystack+STACK_SIZE,(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND),(void *)&reqhand);
+	int worker_done=0;
+	reqhand.worker_done=worker_done;
+
+	for(int i=0;i<conn_params.thread_num;i++){
+		reqhand.thread_id=i;
+		clone(&worker_main,babystack+STACK_SIZE,(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND),(void *)&reqhand);
+	}
 	/* IMPLEMENT HERE THE LOGIC TO START THE WORKER THREAD. */
 
 	/* We are ready to proceed with the rest of the request
@@ -238,23 +259,58 @@ void handle_connection(int conn_socket)
 	client_size=sizeof(struct request);
 	int data;
 	
-	struct request clientreq;
+	struct meta_req clientreq;
 	while(1){
-		data=read(conn_socket, &clientreq,client_size);
+		data=read(conn_socket, &clientreq.req,client_size);
 		if(data<=0){
 			break;
 		}
 
-		clock_gettime(CLOCK_MONOTONIC,&reciept);
-		add_to_queue(clientreq,the_queue);
-			}
+		clock_gettime(CLOCK_MONOTONIC,&clientreq.reciept);
+		int status=add_to_queue(clientreq,the_queue);
+		struct response rej_res;
+		if(status==-1){
+			rej_res.res_id=clientreq.req.req_id;
+			rej_res.accepted=1;
+			write(conn_socket, &rej_res,sizeof(struct response));
+			printf("X%lu,%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
+			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
+			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
+			       TSPEC_TO_DOUBLE(clientreq.reciept));
+			dump_queue_status(the_queue);
+		}
+
+		
+	}
+	
+	/* Ask the worker thead to terminate */
+	printf("INFO: Asserting termination flag for worker thread...\n");
+	worker_done = 1;
+
+	/* Just in case the thread is stuck on the notify semaphore,
+	 * wake it up */
+	sem_post(queue_notify);
+
+	/* Wait for orderly termination of the worker thread */
+	waitpid(-1, NULL, 0);
+	printf("INFO: Worker thread exited.\n");
 	free(the_queue);
+	free(babystack);
+
+
+	shutdown(conn_socket, SHUT_RDWR);
+	close(conn_socket);
+	printf("INFO: Client disconnected.\n");
+
+	
 	
 	
 	/* PERFORM ORDERLY DEALLOCATION AND OUTRO HERE */
 }
 
 
+
+	
 /* Template implementation of the main function for the FIFO
  * server. The server must accept in input a command line parameter
  * with the <port number> to bind the server to. */
@@ -264,6 +320,22 @@ int main (int argc, char ** argv) {
 	struct sockaddr_in addr, client;
 	struct in_addr any_address;
 	socklen_t client_len;
+	struct connection_params conn_params;
+	
+	if(getopt(argc,argv,"q:")!='q'){
+	  perror("Please Specify Queue Size using -q param\n");
+	  return EXIT_FAILURE;
+	}
+	conn_params.queue_size=strtol(optarg,NULL,0);
+	QUEUE_SIZE=conn_params.queue_size;
+
+	if(getopt(argc,argv,"w:")!='w'){
+		perror("Please Specify number of worker threads using -w param\n");
+		return EXIT_FAILURE;
+	}
+	conn_params.thread_num = strtol(optarg,NULL,0);
+	
+	/* Get port to bind our socket to */
 
 	/* Get port to bind our socket to */
 	if (argc > 1) {
@@ -343,8 +415,8 @@ int main (int argc, char ** argv) {
 	/* DONE - Initialize queue protection variables. DO NOT TOUCH */
 
 	/* Ready to handle the new connection with the client. */
-	handle_connection(accepted);
-
+	handle_connection(accepted,conn_params);
+	printf("get here?\n");
 	free(queue_mutex);
 	free(queue_notify);
 
