@@ -279,8 +279,8 @@ void handle_connection(int conn_socket)
 
 	/* Just in case the thread is stuck on the notify semaphore,
 	 * wake it up */
-	sem_post(queue_notify);
-
+	//sem_post(queue_notify);
+	//line above causes error in add to queue????
 	/* Wait for orderly termination of the worker thread */
 	waitpid(-1, NULL, 0);
 	printf("INFO: Worker thread exited.\n");

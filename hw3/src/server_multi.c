@@ -131,7 +131,7 @@ struct meta_req get_from_queue(struct queue * the_queue)
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
 	
 	if(the_queue->size==0){
-		printf("ERROR: TRIED TO GET FROM EMPTY QUEUE");
+		printf("ERROR: TRIED TO GET FROM EMPTY QUEUE\n");
 	       
 	}else{
 		retval=the_queue->items[the_queue->head];
@@ -191,7 +191,9 @@ struct timespec reciept;
 /* Main logic of the worker thread */
 /* IMPLEMENT HERE THE MAIN FUNCTION OF THE WORKER */
 int worker_main(void *args){
+
 	struct clargs* targs=(struct clargs*)args;
+	printf("##STATUS## WORKER THREAD %d ONLINE AND READY.\n",targs->thread_id);
 	struct queue *queue=targs->q;
 	int conn_socket=targs->socket;
 	struct meta_req curreq;
@@ -218,6 +220,8 @@ int worker_main(void *args){
 		printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
 		dump_queue_status(queue);
 	}
+
+	printf("DONE\n");
 	return 0;
 }
 /* Main function to handle connection with the client. This function
@@ -238,16 +242,20 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 	the_queue->tail=-1;
 	the_queue->size=0;
 	/* Queue ready to go here. Let's start the worker thread. */
-	void * babystack=malloc(STACK_SIZE);
-	struct clargs reqhand;
-	reqhand.q=the_queue;
-	reqhand.socket=conn_socket;
-	int worker_done=0;
-	reqhand.worker_done=worker_done;
+	void* stacks[conn_params.thread_num];
+	struct clargs* params[conn_params.thread_num];
+	int i;
 
-	for(int i=0;i<conn_params.thread_num;i++){
-		reqhand.thread_id=i;
-		clone(&worker_main,babystack+STACK_SIZE,(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND),(void *)&reqhand);
+	int worker_done=0;
+
+	for(i=0;i<conn_params.thread_num;i++){
+		params[i]=malloc(sizeof(struct clargs));
+		params[i]->worker_done=worker_done;
+		params[i]->q=the_queue;
+		params[i]->socket=conn_socket;
+		params[i]->thread_id=i;
+		stacks[i]=malloc(STACK_SIZE);
+		clone(worker_main,stacks[i]+STACK_SIZE,(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND),(void *)params[i]);
 	}
 	/* IMPLEMENT HERE THE LOGIC TO START THE WORKER THREAD. */
 
@@ -285,24 +293,29 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 	
 	/* Ask the worker thead to terminate */
 	printf("INFO: Asserting termination flag for worker thread...\n");
-	worker_done = 1;
+	for(i=0;i<conn_params.thread_num;i++){
+		params[i]->worker_done = 1;
+	}
+
 
 	/* Just in case the thread is stuck on the notify semaphore,
 	 * wake it up */
-	sem_post(queue_notify);
+
 
 	/* Wait for orderly termination of the worker thread */
 	waitpid(-1, NULL, 0);
 	printf("INFO: Worker thread exited.\n");
 	free(the_queue);
-	free(babystack);
-
+	for(i=0;i<conn_params.thread_num;i++){
+		free(stacks[i]);
+		free(params[i]);
+	}
 
 	shutdown(conn_socket, SHUT_RDWR);
 	close(conn_socket);
 	printf("INFO: Client disconnected.\n");
 
-	
+
 	
 	
 	/* PERFORM ORDERLY DEALLOCATION AND OUTRO HERE */
@@ -328,18 +341,18 @@ int main (int argc, char ** argv) {
 	}
 	conn_params.queue_size=strtol(optarg,NULL,0);
 	QUEUE_SIZE=conn_params.queue_size;
-
+	printf("q=%ld\n",strtol(optarg,NULL,0));
 	if(getopt(argc,argv,"w:")!='w'){
 		perror("Please Specify number of worker threads using -w param\n");
 		return EXIT_FAILURE;
 	}
 	conn_params.thread_num = strtol(optarg,NULL,0);
-	
-	/* Get port to bind our socket to */
-
+	printf("w=%ld\n",strtol(optarg,NULL,0));	
+ 	/* Get port to bind our socket to */
+printf("p=%ld\n",strtol(argv[3],NULL,0));
 	/* Get port to bind our socket to */
 	if (argc > 1) {
-		socket_port = strtol(argv[1], NULL, 10);
+		socket_port = strtol(argv[3], NULL, 10);
 		printf("INFO: setting server port as: %d\n", socket_port);
 	} else {
 		ERROR_INFO();
@@ -415,8 +428,9 @@ int main (int argc, char ** argv) {
 	/* DONE - Initialize queue protection variables. DO NOT TOUCH */
 
 	/* Ready to handle the new connection with the client. */
-	handle_connection(accepted,conn_params);
 	printf("get here?\n");
+	handle_connection(accepted,conn_params);
+
 	free(queue_mutex);
 	free(queue_notify);
 
