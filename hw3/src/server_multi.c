@@ -334,25 +334,41 @@ int main (int argc, char ** argv) {
 	struct in_addr any_address;
 	socklen_t client_len;
 	struct connection_params conn_params;
-	
-	if(getopt(argc,argv,"q:")!='q'){
-	  perror("Please Specify Queue Size using -q param\n");
-	  return EXIT_FAILURE;
+	printf("ind=%d\n",optind);
+	int opt;
+	while((opt=getopt(argc,argv,"q:w:")) != -1){
+		switch(opt){
+		case 'q':
+			conn_params.queue_size=strtol(optarg,NULL,0);
+			break;
+		case 'w':
+			conn_params.thread_num = strtol(optarg,NULL,0);
+			break;
+		default:
+			printf("YOU USED IT WRONG. LEAVE.");
+			return EXIT_FAILURE;
+		}
 	}
-	conn_params.queue_size=strtol(optarg,NULL,0);
-	QUEUE_SIZE=conn_params.queue_size;
-	printf("q=%ld\n",strtol(optarg,NULL,0));
-	if(getopt(argc,argv,"w:")!='w'){
-		perror("Please Specify number of worker threads using -w param\n");
-		return EXIT_FAILURE;
-	}
-	conn_params.thread_num = strtol(optarg,NULL,0);
-	printf("w=%ld\n",strtol(optarg,NULL,0));	
+	/* if(getopt(argc,argv,"q:w:")!='q'){ */
+	/*   perror("Please Specify Queue Size using -q param\n"); */
+	/*   return EXIT_FAILURE; */
+	/* } */
+	/* printf("ind=%d\n",optind); */
+	/* conn_params.queue_size=strtol(optarg,NULL,0); */
+	/* QUEUE_SIZE=conn_params.queue_size; */
+	/* printf("q=%ld\n",strtol(optarg,NULL,0)); */
+	/* if(getopt(argc,argv,"q:w:")!='w'){ */
+	/* 	perror("Please Specify number of worker threads using -w param\n"); */
+	/* 	return EXIT_FAILURE; */
+	/* } */
+	/* printf("ind=%d\n",optind); */
+	/* conn_params.thread_num = strtol(optarg,NULL,0); */
+	/* printf("w=%ld\n",strtol(optarg,NULL,0));	 */
  	/* Get port to bind our socket to */
-printf("p=%ld\n",strtol(argv[3],NULL,0));
+	printf("opt=%d,c=%d\n",optind,argc);
 	/* Get port to bind our socket to */
-	if (argc > 1) {
-		socket_port = strtol(argv[3], NULL, 10);
+	if (optind<argc) {
+		socket_port = strtol(argv[optind], NULL, 10);
 		printf("INFO: setting server port as: %d\n", socket_port);
 	} else {
 		ERROR_INFO();
