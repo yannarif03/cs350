@@ -50,7 +50,7 @@
 #define BACKLOG_COUNT 100
 #define USAGE_STRING				\
 	"Missing parameter. Exiting.\n"		\
-	"Usage: %s <port_number>\n"
+	"Usage: %s <port_number> -q <queue_size> -w <worker_threads>\n"
 
 /* 4KB of stack for the worker thread */
 #define STACK_SIZE (4096)
@@ -107,7 +107,6 @@ int add_to_queue(struct meta_req to_add, struct queue * the_queue)
 			retval=0;
 			the_queue->size+=1;
 			
-			//printf("head: %d, tail: %d, size: %d\n", the_queue->head, the_queue->tail, the_queue->size);
 		}
 		sem_post(queue_notify);
 	}
@@ -193,17 +192,21 @@ struct timespec reciept;
 int worker_main(void *args){
 
 	struct clargs* targs=(struct clargs*)args;
-	printf("##STATUS## WORKER THREAD %d ONLINE AND READY.\n",targs->thread_id);
+	printf("##STATUS## WORKER THREAD %d ONLINE\n",targs->thread_id);
 	struct queue *queue=targs->q;
 	int conn_socket=targs->socket;
 	struct meta_req curreq;
 	struct timespec start,completion;
 	struct response clientres;
+	printf("worker_init: %d, %d\n", ((struct clargs*)args)->worker_done, targs->thread_id);
 	while(!targs->worker_done){
 		curreq=get_from_queue(queue);
 		/* if(TSPEC_TO_DOUBLE(curreq.timestamp)==0){ */
 		/*   continue; */
 		/* } */
+		if (targs->worker_done) {
+			break;
+		}
 		
 		clock_gettime(CLOCK_MONOTONIC,&start);
 		get_elapsed_busywait(curreq.req.req_len.tv_sec,curreq.req.req_len.tv_nsec);
@@ -212,6 +215,7 @@ int worker_main(void *args){
 		clientres.accepted=0;
 		write(conn_socket,(struct response *) &clientres,sizeof(struct response));
 		int id=curreq.req.req_id;
+		printf("finished busywait\n");
 		double sent_time=TSPEC_TO_DOUBLE(curreq.req.timestamp);
 		double sent_len=TSPEC_TO_DOUBLE(curreq.req.req_len);
 		double rectime=TSPEC_TO_DOUBLE(curreq.reciept);
@@ -220,8 +224,9 @@ int worker_main(void *args){
 		printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
 		dump_queue_status(queue);
 	}
-
+	printf("worker_done: %d\n", ((struct clargs*)args)->worker_done);	
 	printf("DONE\n");
+	fflush(stdout);
 	return 0;
 }
 /* Main function to handle connection with the client. This function
@@ -293,17 +298,20 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 	
 	/* Ask the worker thead to terminate */
 	printf("INFO: Asserting termination flag for worker thread...\n");
+	
 	for(i=0;i<conn_params.thread_num;i++){
 		params[i]->worker_done = 1;
+		waitpid(-1, NULL, 0);	
+		sem_post(queue_notify);
 	}
 
 
 	/* Just in case the thread is stuck on the notify semaphore,
 	 * wake it up */
-
+	
 
 	/* Wait for orderly termination of the worker thread */
-	waitpid(-1, NULL, 0);
+	
 	printf("INFO: Worker thread exited.\n");
 	free(the_queue);
 	for(i=0;i<conn_params.thread_num;i++){
@@ -349,6 +357,7 @@ int main (int argc, char ** argv) {
 			return EXIT_FAILURE;
 		}
 	}
+	QUEUE_SIZE=conn_params.queue_size;
 	/* if(getopt(argc,argv,"q:w:")!='q'){ */
 	/*   perror("Please Specify Queue Size using -q param\n"); */
 	/*   return EXIT_FAILURE; */
