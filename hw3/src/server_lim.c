@@ -263,7 +263,7 @@ void handle_connection(int conn_socket)
 			rej_res.res_id=clientreq.req.req_id;
 			rej_res.accepted=1;
 			write(conn_socket, &rej_res,sizeof(struct response));
-			printf("X%lu,%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
+			printf("X%lu:%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
 			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
 			       TSPEC_TO_DOUBLE(clientreq.reciept));

@@ -11,7 +11,8 @@ for i in range(10,20):
     total_time=dfi['completed'].iloc[-1]-dfi['recieved'][0]
     server_util.append(active_time/total_time)
     avg_response_times.append(avgt)
-
+    print(server_util[-1])
+    
 print(server_util)
 print(avg_response_times)
 plt.xlabel("server util")
@@ -28,7 +29,7 @@ for i in range(10,20):
     total_time=dfi['completed'].iloc[-1]-dfi['recieved'][0]
     server_util.append(active_time/total_time)
     avg_response_times.append(avgt)
-
+    print(server_util[-1])
 
 plt.plot(server_util,avg_response_times,color='r')
 
