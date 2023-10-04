@@ -310,20 +310,25 @@ int main (int argc, char ** argv) {
 	struct in_addr any_address;
 	socklen_t client_len;
 
-	
-	if(getopt(argc,argv,"q:")!='q'){
-	  perror("Please Specify Queue Size using -q param\n");
-	  return EXIT_FAILURE;
+	int opt;
+	while((opt=getopt(argc,argv,"q:")) != -1){
+		switch(opt){
+		case 'q':
+			QUEUE_SIZE=strtol(optarg,NULL,0);
+			break;
+		default:
+			printf("YOU USED IT WRONG. LEAVE.");
+			return EXIT_FAILURE;
+		}
 	}
 
-	QUEUE_SIZE=strtol(optarg,NULL,0);
 
 	
 	/* Get port to bind our socket to */
 
 	/* Get port to bind our socket to */
-	if (argc > 1) {
-		socket_port = strtol(argv[1], NULL, 10);
+	if (optind<argc) {
+		socket_port = strtol(argv[optind], NULL, 10);
 		printf("INFO: setting server port as: %d\n", socket_port);
 	} else {
 		ERROR_INFO();

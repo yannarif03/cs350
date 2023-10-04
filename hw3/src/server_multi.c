@@ -192,14 +192,12 @@ struct timespec reciept;
 int worker_main(void *args){
 
 	struct clargs* targs=(struct clargs*)args;
-	printf("##STATUS## WORKER THREAD %d ONLINE\n",targs->thread_id);
 	struct queue *queue=targs->q;
 	int conn_socket=targs->socket;
 	struct meta_req curreq;
 	struct timespec start,completion;
 	struct response clientres;
-	printf("worker_init: %d, %d\n", ((struct clargs*)args)->worker_done, targs->thread_id);
-	while(!targs->worker_done){
+	while(!targs->worker_done | (queue->size!=0)){
 		curreq=get_from_queue(queue);
 		/* if(TSPEC_TO_DOUBLE(curreq.timestamp)==0){ */
 		/*   continue; */
@@ -215,7 +213,6 @@ int worker_main(void *args){
 		clientres.accepted=0;
 		write(conn_socket,(struct response *) &clientres,sizeof(struct response));
 		int id=curreq.req.req_id;
-		printf("finished busywait\n");
 		double sent_time=TSPEC_TO_DOUBLE(curreq.req.timestamp);
 		double sent_len=TSPEC_TO_DOUBLE(curreq.req.req_len);
 		double rectime=TSPEC_TO_DOUBLE(curreq.reciept);
@@ -224,8 +221,6 @@ int worker_main(void *args){
 		printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
 		dump_queue_status(queue);
 	}
-	printf("worker_done: %d\n", ((struct clargs*)args)->worker_done);	
-	printf("DONE\n");
 	fflush(stdout);
 	return 0;
 }
@@ -342,7 +337,6 @@ int main (int argc, char ** argv) {
 	struct in_addr any_address;
 	socklen_t client_len;
 	struct connection_params conn_params;
-	printf("ind=%d\n",optind);
 	int opt;
 	while((opt=getopt(argc,argv,"q:w:")) != -1){
 		switch(opt){
@@ -374,7 +368,6 @@ int main (int argc, char ** argv) {
 	/* conn_params.thread_num = strtol(optarg,NULL,0); */
 	/* printf("w=%ld\n",strtol(optarg,NULL,0));	 */
  	/* Get port to bind our socket to */
-	printf("opt=%d,c=%d\n",optind,argc);
 	/* Get port to bind our socket to */
 	if (optind<argc) {
 		socket_port = strtol(argv[optind], NULL, 10);
@@ -453,7 +446,6 @@ int main (int argc, char ** argv) {
 	/* DONE - Initialize queue protection variables. DO NOT TOUCH */
 
 	/* Ready to handle the new connection with the client. */
-	printf("get here?\n");
 	handle_connection(accepted,conn_params);
 
 	free(queue_mutex);
