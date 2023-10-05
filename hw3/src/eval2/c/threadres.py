@@ -9,6 +9,8 @@ for i in worker_x:
     avg_response_times.append(df['response time'].mean())
 plt.xlabel("number of workers")
 plt.ylabel("response time avg")
+print(worker_x)
+print(avg_response_times)
 plt.plot(worker_x,avg_response_times,color='r')
 plt.savefig("workresp.png")
                               
