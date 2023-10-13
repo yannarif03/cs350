@@ -267,7 +267,6 @@ void handle_connection(int conn_socket)
 			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
 			       TSPEC_TO_DOUBLE(clientreq.reciept));
-			dump_queue_status(the_queue);
 		}
 
 		
@@ -405,7 +404,6 @@ int main (int argc, char ** argv) {
 
 	/* Ready to handle the new connection with the client. */
 	handle_connection(accepted);
-	printf("get here?\n");
 	free(queue_mutex);
 	free(queue_notify);
 

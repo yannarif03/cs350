@@ -285,7 +285,6 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
 			       TSPEC_TO_DOUBLE(clientreq.reciept));
-			dump_queue_status(the_queue);
 		}
 
 		
