@@ -267,6 +267,7 @@ void handle_connection(int conn_socket)
 			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
 			       TSPEC_TO_DOUBLE(clientreq.reciept));
+
 		}
 
 		

@@ -1,7 +1,7 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 import numpy as np
-df=pd.read_csv("rejqueues/rejects_d.csv")
+df=pd.read_csv("rejqueues/rejects_e.csv")
 interrej=[df['recieved'].iloc[i+1]-df['recieved'].iloc[i] for i in range(len(df['recieved'])-1)]
 index=max(interrej)
 print(index//0.05)
@@ -12,5 +12,5 @@ for i in range(len(interrej)):
 plt.plot(bins,values)
 plt.xlabel("inter-rejection time")
 plt.ylabel("frequency")
-plt.savefig("rejqueues/d_plot.png")
+plt.savefig("rejqueues/e_plot.png")
 print(len(interrej))

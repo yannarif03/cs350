@@ -59,7 +59,13 @@
 sem_t * queue_mutex;
 sem_t * queue_notify;
 /* END - Variables needed to protect the shared queue. DO NOT TOUCH */
-
+sem_t * printf_mutex;
+#define sync_printf(...)			\
+  do {						\
+    sem_wait(printf_mutex);			\
+    printf(__VA_ARGS__);			\
+    sem_post(printf_mutex);			\
+  } while(0)
 /* Max number of requests that can be queued */
 #define QUEUE_MAX 1500
 int QUEUE_SIZE;
@@ -175,6 +181,7 @@ void dump_queue_status(struct queue * the_queue)
 		}
 	}
 	printf("]\n");
+	
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
 	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
@@ -430,6 +437,7 @@ int main (int argc, char ** argv) {
 	/* Initialize queue protection variables. DO NOT TOUCH. */
 	queue_mutex = (sem_t *)malloc(sizeof(sem_t));
 	queue_notify = (sem_t *)malloc(sizeof(sem_t));
+	printf_mutex = (sem_t *)malloc(sizeof(sem_t));
 	retval = sem_init(queue_mutex, 0, 1);
 	if (retval < 0) {
 		ERROR_INFO();
@@ -449,7 +457,7 @@ int main (int argc, char ** argv) {
 
 	free(queue_mutex);
 	free(queue_notify);
-
+	free(printf_mutex);
 	close(sockfd);
 	return EXIT_SUCCESS;
 
