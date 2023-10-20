@@ -164,9 +164,8 @@ void dump_queue_status(struct queue * the_queue)
 	/* WRITE YOUR CODE HERE! */
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
 
-
 	int end=the_queue->size;
-	printf("Q:[");
+	sync_printf("Q:[");
 	int start=the_queue->head;
 	int id;
 	int j=0;
@@ -175,12 +174,12 @@ void dump_queue_status(struct queue * the_queue)
 		i=i%QUEUE_SIZE;
 		j++;
 		id=the_queue->items[i].req.req_id;
-		printf("R%d",id);
+		sync_printf("R%d",id);
 		if(j!=end){
-			printf(",");
+			sync_printf(",");
 		}
 	}
-	printf("]\n");
+	sync_printf("]\n");
 	
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
@@ -225,7 +224,7 @@ int worker_main(void *args){
 		double rectime=TSPEC_TO_DOUBLE(curreq.reciept);
 		double starttime=TSPEC_TO_DOUBLE(start);
 		double comptime=(TSPEC_TO_DOUBLE(completion));
-		printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
+		sync_printf("T%d R%d:%.6f,%.6f,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,sent_len,rectime,starttime,comptime);
 		dump_queue_status(queue);
 	}
 	fflush(stdout);
@@ -288,7 +287,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 			rej_res.res_id=clientreq.req.req_id;
 			rej_res.accepted=1;
 			write(conn_socket, &rej_res,sizeof(struct response));
-			printf("X%lu:%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
+			sync_printf("X%lu:%.6f,%.6f,%.6f\n",clientreq.req.req_id, \
 			       TSPEC_TO_DOUBLE(clientreq.req.timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_len),	\
 			       TSPEC_TO_DOUBLE(clientreq.reciept));
@@ -439,6 +438,7 @@ int main (int argc, char ** argv) {
 	queue_notify = (sem_t *)malloc(sizeof(sem_t));
 	printf_mutex = (sem_t *)malloc(sizeof(sem_t));
 	retval = sem_init(queue_mutex, 0, 1);
+	sem_init(printf_mutex,0,1);
 	if (retval < 0) {
 		ERROR_INFO();
 		perror("Unable to initialize queue mutex");
