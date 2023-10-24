@@ -72,6 +72,7 @@ int QUEUE_SIZE;
 struct connection_params{
 	long queue_size;
 	int thread_num;
+	int policy;
 };
 
 struct meta_req {
@@ -123,8 +124,58 @@ int add_to_queue(struct meta_req to_add, struct queue * the_queue)
 	return retval;
 }
 
+struct meta_req get_from_queue_sjn(struct queue * the_queue)
+{
+	struct meta_req retval;
+	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
+	sem_wait(queue_notify);
+	sem_wait(queue_mutex);
+	/* QUEUE PROTECTION INTRO END --- DO NOT TOUCH */
+
+	/* WRITE YOUR CODE HERE! */
+	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
+	
+	if(the_queue->size==0){
+		printf("ERROR: TRIED TO GET FROM EMPTY QUEUE\n");
+	       
+	}else{
+		int sjn_ind=the_queue->head;
+		double sjn_length=TSPEC_TO_DOUBLE(the_queue->items[the_queue->head].req.req_len);		
+		for(int i=0;i<the_queue->size;i++){
+			
+			int index=the_queue->head+i;
+			double cur_length=TSPEC_TO_DOUBLE(the_queue->items[index].req.req_len);
+			if(cur_length<sjn_length){
+				sjn_length=cur_length;
+				sjn_ind=index;
+			}
+							  
+		}
+		retval=the_queue->items[sjn_ind];
+		for(int i=sjn_ind;i==the_queue->tail;i=(i+1)%QUEUE_SIZE){
+			the_queue->items[i]=the_queue->items[(i+1)%QUEUE_SIZE];
+		}
+		the_queue->tail=(the_queue->tail-1+QUEUE_SIZE)%QUEUE_SIZE;
+				
+		/* for(int i=sjn_ind;i==the_queue->head;i=(i-1+QUEUE_SIZE)%QUEUE_SIZE){ */
+		/* 	the_queue->items[i]=the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE]; */
+		/* 	//the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE]=; */
+		/* 	printf("i: %d\nsjn: %d\nhead: %d \n",i,sjn_ind,the_queue->head); */
+		/* } */
+		/* the_queue->head=the_queue->head+1%QUEUE_SIZE; */
+		the_queue->size-=1;
+		if(the_queue->size==0){
+			the_queue->head=the_queue->tail=-1;
+		}
+	}
+	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
+	sem_post(queue_mutex);
+	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
+	printf("id: %lu\n",retval.req.req_id);
+	return retval;
+}
 /* Add a new request <request> to the shared queue <the_queue> */
-struct meta_req get_from_queue(struct queue * the_queue)
+struct meta_req get_from_queue_fifo(struct queue * the_queue)
 {
 	struct meta_req retval;
 	/* QUEUE PROTECTION INTRO START --- DO NOT TOUCH */
@@ -149,8 +200,10 @@ struct meta_req get_from_queue(struct queue * the_queue)
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
 	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
+
 	return retval;
 }
+
 
 /* Implement this method to correctly dump the status of the queue
  * following the format Q:[R<request ID>,R<request ID>,...] */
@@ -191,6 +244,7 @@ struct clargs{
 	int thread_id;
 	int socket;
         int worker_done;
+	int policy;
 };
 struct timespec reciept;
 /* Main logic of the worker thread */
@@ -204,7 +258,11 @@ int worker_main(void *args){
 	struct timespec start,completion;
 	struct response clientres;
 	while(!targs->worker_done | (queue->size!=0)){
-		curreq=get_from_queue(queue);
+		if(targs->policy==0){
+			curreq=get_from_queue_fifo(queue);
+		}else if(targs->policy==1){
+			curreq=get_from_queue_sjn(queue);
+		}
 		/* if(TSPEC_TO_DOUBLE(curreq.timestamp)==0){ */
 		/*   continue; */
 		/* } */
@@ -259,6 +317,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 		params[i]->q=the_queue;
 		params[i]->socket=conn_socket;
 		params[i]->thread_id=i;
+		params[i]->policy=conn_params.policy;
 		stacks[i]=malloc(STACK_SIZE);
 		clone(worker_main,stacks[i]+STACK_SIZE,(CLONE_THREAD | CLONE_VM | CLONE_SIGHAND),(void *)params[i]);
 	}
@@ -342,13 +401,25 @@ int main (int argc, char ** argv) {
 	socklen_t client_len;
 	struct connection_params conn_params;
 	int opt;
-	while((opt=getopt(argc,argv,"q:w:")) != -1){
+	while((opt=getopt(argc,argv,"q:w:p:")) != -1){
 		switch(opt){
 		case 'q':
 			conn_params.queue_size=strtol(optarg,NULL,0);
 			break;
 		case 'w':
 			conn_params.thread_num = strtol(optarg,NULL,0);
+			break;
+		case 'p':
+			if(strcmp(optarg,"FIFO")==0){
+				conn_params.policy=0;
+				printf("FIFO POLICY LIVE\n");
+			}else if(strcmp(optarg,"SJN")==0){
+				printf("SJN POLICY LIVE\n");
+				conn_params.policy=1;
+			}else{
+				printf("invalid policy entered. Please use SJN or FIFO\n");
+				return EXIT_FAILURE;
+			}
 			break;
 		default:
 			printf("YOU USED IT WRONG. LEAVE.");
