@@ -152,17 +152,12 @@ struct meta_req get_from_queue_sjn(struct queue * the_queue)
 							  
 		}
 		retval=the_queue->items[sjn_ind];
-		for(int i=sjn_ind;i==the_queue->tail;i=(i+1)%QUEUE_SIZE){
-			the_queue->items[i]=the_queue->items[(i+1)%QUEUE_SIZE];
+		for(int i=sjn_ind;i!=the_queue->head;i=(i-1+QUEUE_SIZE)%QUEUE_SIZE){
+			the_queue->items[i]=the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE];
+			
+			//the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE]=;
 		}
-		the_queue->tail=(the_queue->tail-1+QUEUE_SIZE)%QUEUE_SIZE;
-				
-		/* for(int i=sjn_ind;i==the_queue->head;i=(i-1+QUEUE_SIZE)%QUEUE_SIZE){ */
-		/* 	the_queue->items[i]=the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE]; */
-		/* 	//the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE]=; */
-		/* 	printf("i: %d\nsjn: %d\nhead: %d \n",i,sjn_ind,the_queue->head); */
-		/* } */
-		/* the_queue->head=the_queue->head+1%QUEUE_SIZE; */
+		the_queue->head=(the_queue->head+1)%QUEUE_SIZE;
 		the_queue->size-=1;
 		if(the_queue->size==0){
 			the_queue->head=the_queue->tail=-1;
@@ -171,7 +166,6 @@ struct meta_req get_from_queue_sjn(struct queue * the_queue)
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
 	sem_post(queue_mutex);
 	/* QUEUE PROTECTION OUTRO END --- DO NOT TOUCH */
-	printf("id: %lu\n",retval.req.req_id);
 	return retval;
 }
 /* Add a new request <request> to the shared queue <the_queue> */
