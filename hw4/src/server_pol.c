@@ -143,7 +143,7 @@ struct meta_req get_from_queue_sjn(struct queue * the_queue)
 		double sjn_length=TSPEC_TO_DOUBLE(the_queue->items[the_queue->head].req.req_len);		
 		for(int i=0;i<the_queue->size;i++){
 			
-			int index=the_queue->head+i;
+			int index=(the_queue->head+i)%QUEUE_SIZE;
 			double cur_length=TSPEC_TO_DOUBLE(the_queue->items[index].req.req_len);
 			if(cur_length<sjn_length){
 				sjn_length=cur_length;
@@ -152,6 +152,7 @@ struct meta_req get_from_queue_sjn(struct queue * the_queue)
 							  
 		}
 		retval=the_queue->items[sjn_ind];
+		
 		for(int i=sjn_ind;i!=the_queue->head;i=(i-1+QUEUE_SIZE)%QUEUE_SIZE){
 			the_queue->items[i]=the_queue->items[(i-1+QUEUE_SIZE)%QUEUE_SIZE];
 			
@@ -161,6 +162,9 @@ struct meta_req get_from_queue_sjn(struct queue * the_queue)
 		the_queue->size-=1;
 		if(the_queue->size==0){
 			the_queue->head=the_queue->tail=-1;
+		}
+		if(TSPEC_TO_DOUBLE(retval.req.req_len)==0){
+			printf("##ERROR## head: %d tail: %d size: %d ind: %d\n", the_queue->head, the_queue->tail, the_queue->size, sjn_ind);
 		}
 	}
 	/* QUEUE PROTECTION OUTRO START --- DO NOT TOUCH */
