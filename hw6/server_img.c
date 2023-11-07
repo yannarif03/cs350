@@ -346,7 +346,6 @@ int worker_main(void *args){
 
 void handle_connection(int conn_socket, struct connection_params conn_params)
 {
-	
 	struct queue * the_queue;
 	
 	/* The connection with the client is alive here. Let's
@@ -385,7 +384,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 
 	/* We are ready to proceed with the rest of the request
 	 * handling logic. */
-
+	
 	/* REUSE LOGIC FROM HW1 TO HANDLE THE PACKETS */
 	int client_size;
 	client_size=sizeof(struct request);
@@ -397,7 +396,6 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 		if(data<=0){
 			break;
 		}
-		
 		clock_gettime(CLOCK_MONOTONIC,&clientreq.reciept);
 		//check if img_op=IMG_REGISTER. if so, handle the op right away, reading the img payload, replying to client and bypassing the queue.
 		if(clientreq.req.img_op==1){
