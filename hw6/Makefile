@@ -36,7 +36,7 @@
 
 TARGETS = server_img
 LIBS = timelib imglib md5sum
-LDFLAGS = -lm -lpthread -O2
+LDFLAGS = -lm -lpthread -O0
 BUILDDIR = build
 BUILD_TARGETS = $(addprefix $(BUILDDIR)/,$(TARGETS))
 OBJS = $(addprefix $(BUILDDIR)/,$(addsuffix .o,$(TARGETS) $(LIBS)))
