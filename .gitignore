@@ -5,5 +5,5 @@ BUILD1/build/*
 *.zip
 *_ext
 *.o
-*.txt
+
 

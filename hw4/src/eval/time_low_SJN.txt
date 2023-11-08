@@ -1,0 +1,10 @@
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.71
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.71
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.72
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.70
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.69
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.71
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.70
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.71
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.72
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:30.69
