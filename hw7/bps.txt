@@ -1,4 +1,0 @@
-break /home/yann/CS/cs350/hw7/server_mimg.c:615
-break handle_connection
-break worker_main
-r -w 10 -q 100 -p FIFO 2222

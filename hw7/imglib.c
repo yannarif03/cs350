@@ -21,22 +21,31 @@
 *******************************************************************************/
 
 #include "imglib.h"
+#include <errno.h>
+#include <sys/mman.h>
 
 #define pix(img, x, y)				\
 	img->pixels[((y) * img->width) + (x)]
+
 
 /* Allocate and initialize the memory and metadata for a new
  * <width>x<height> pixels. */
 struct image * createImage(uint32_t width, uint32_t height)
 {
 	uint64_t img_bytes = height * width * sizeof(uint32_t);
-	struct image * img = (struct image*)malloc(sizeof(struct image));
-	img->width = width;
+	//struct image * img = (struct image*)malloc(sizeof(struct image));
+    struct image * img = (struct image*)mmap(NULL, sizeof(struct image), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    img->width = width;
 	img->height = height;
-	img->pixels = (uint32_t * )malloc(img_bytes);
+	img->pixels = (uint32_t * )mmap(NULL, img_bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(img->pixels==NULL){
+        fprintf(stderr,"invalid pointer, img_bytes=%ld\n",img_bytes);
+        fprintf(stderr,"errno: %d",errno);
 
+    }
 	/* Reset all the pixels to 0 for an all-black image */
 	memset(img->pixels, 0, img_bytes);
+    //printf("mallocing: %dx%d\n",width,height);
 
 	return img;
 }
@@ -46,13 +55,16 @@ void deleteImage(struct image * img)
 {
 	/* Remove image payload, if any. */
 	if (img && img->pixels) {
-		free(img->pixels);
+        //printf("FREEING POINTER %p\n",img->pixels);
+		//free(img->pixels);
+		munmap(img->pixels, img->height* img->width * sizeof(uint32_t));
 		img->pixels = NULL;
 	}
 
 	/* Deallocate image metadata */
 	if (img) {
-		free(img);
+        //printf("FREEING POINTER %p\n",img);
+		munmap(img,sizeof(struct image));
 	}
 }
 
@@ -151,16 +163,15 @@ struct image * cloneImage(const struct image * src, uint8_t * err) {
  * has occurred. In case of error, NULL is returned by the function.
 */
 struct image * rotate90Clockwise(const struct image * img, uint8_t * err) {
+
     struct image * rotated = createImage(img->height, img->width);
     uint32_t y, x;
-
     if (!img || !img->pixels) {
 	    if (err) {
 		    *err = 1;
 	    }
 	    return NULL;
     }
-
     for (y = 0; y < img->height; y++) {
         for (x = 0; x < img->width; x++) {
             uint32_t newX = y;
@@ -190,9 +201,10 @@ struct image * rotate90Clockwise(const struct image * img, uint8_t * err) {
  */
 
 struct image* blurImage(const struct image* img) {
+    //printf("ENTERED FUNCTION\n");
     struct image* blurredImg = createImage(img->width, img->height);
     uint32_t x, y;
-
+    //printf("Declared variables\n");
     for (y = 0; y < img->height; y++) {
         for (x = 0; x < img->width; x++) {
             // For simplicity, edge pixels are not blurred
@@ -238,9 +250,10 @@ struct image* blurImage(const struct image* img) {
  *       to avoid memory leaks.
  */
 struct image* sharpenImage(const struct image* img) {
+    //printf("ENTERED FUNCTION\n");
     struct image* sharpenedImg = createImage(img->width, img->height);
     uint32_t x, y;
-
+    //printf("Declared variables\n");
     for (y = 0; y < img->height; y++) {
         for (x = 0; x < img->width; x++) {
             // For simplicity, edge pixels are not sharpened
@@ -290,9 +303,10 @@ struct image* sharpenImage(const struct image* img) {
  *       to avoid memory leaks.
  */
 struct image* detectVerticalEdges(const struct image* img) {
+    //printf("ENTERED FUNCTION\n");
     struct image* edgeImg = createImage(img->width, img->height);
     uint32_t x, y;
-
+    //printf("Declared variables\n");
     int kernel[3][3] = {
         {-1, 0, 1},
         {-2, 0, 2},
@@ -344,9 +358,10 @@ struct image* detectVerticalEdges(const struct image* img) {
  *       to avoid memory leaks.
  */
 struct image* detectHorizontalEdges(const struct image* img) {
+    //printf("ENTERED FUNCTION\n");
     struct image* edgeImg = createImage(img->width, img->height);
     uint32_t x, y;
-
+    //printf("Declared variables\n");
     int kernel[3][3] = {
         {-1, -2, -1},
         { 0,  0,  0},

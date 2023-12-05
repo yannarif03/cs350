@@ -1,0 +1,10 @@
+./c_1_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.20
+./c_2_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:04.28
+./c_3_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.21
+./c_4_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.84
+./c_5_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:07.37
+./c_6_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:10.26
+./c_7_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.98
+./c_8_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:14.31
+./c_9_out.txt:	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:16.01
+./c_10_out.txt: Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.82

@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <signal.h>
+#include <mcheck.h>
 
 /* Needed for wait(...) */
 #include <sys/types.h>
@@ -56,6 +57,18 @@
 	"-p <policy: FIFO> "			\
 	"<port_number>\n"
 
+#define sync_printf(...)			\
+  do {						\
+    sem_wait(printf_mutex);			\
+    printf(__VA_ARGS__);			\
+    sem_post(printf_mutex);			\
+  } while(0)
+
+#ifdef DEBUG
+#define DEBUG_PRINTF(format,...) printf("DEBUG: " format,##__VA_ARGS__);
+#else
+#define DEBUG_PRINTF(format,...)
+#endif
 /* 4KB of stack for the worker thread */
 #define STACK_SIZE (4096)
 
@@ -68,19 +81,14 @@ sem_t * ret_mutex;
 sem_t * img_mutex;
 sem_t * arr_mutex;
 sem_t * printf_mutex;
-#define sync_printf(...)			\
-  do {						\
-    sem_wait(printf_mutex);			\
-    printf(__VA_ARGS__);			\
-    sem_post(printf_mutex);			\
-  } while(0)
+
 /* Max number of requests that can be queued */
 #define QUEUE_MAX 1500
 int QUEUE_SIZE;
 struct image ** img_arr=NULL;
 sem_t ** db_mutex=NULL;
 int * counters=NULL;
-volatile int num_imgs=0;
+volatile int num_imgs = 0;
 struct connection_params{
 	long queue_size;
 	int thread_num;
@@ -97,9 +105,7 @@ struct queue {
 	struct meta_req items[QUEUE_MAX];
 	int size;
 };
-//need array with multiple ints for multiple images?
-int cur_op=0;
-int arrived=0;
+
 /* Add a new request <request> to the shared queue <the_queue> */
 int add_to_queue(struct meta_req to_add, struct queue * the_queue)
 {
@@ -198,7 +204,7 @@ struct meta_req get_from_queue_fifo(struct queue * the_queue)
 	/* MAKE SURE NOT TO RETURN WITHOUT GOING THROUGH THE OUTRO CODE! */
 
 	if(the_queue->size==0){
-		printf("ERROR: TRIED TO GET FROM EMPTY QUEUE\n");
+		DEBUG_PRINTF("ERROR: TRIED TO GET FROM EMPTY QUEUE\n");
 
 	}else{
 		retval=the_queue->items[the_queue->head];
@@ -269,7 +275,7 @@ int worker_main(void *args){
 	struct response clientres;
 	while(!targs->worker_done | (queue->size!=0)){
 		int my_arr;
-		sync_printf("starting get\n");
+		//sync_printf("starting get\n");
 
 		if(targs->policy==0){
 
@@ -278,7 +284,7 @@ int worker_main(void *args){
 			counters[curreq.req.img_id*2]++;
 			sem_post(queue_mutex);
 		}
-		sync_printf("finished get\n");
+		//sync_printf("finished get\n");
 		/*else if(targs->policy==1){
 			curreq=get_from_queue_sjn(queue);
 			}*/
@@ -293,53 +299,56 @@ int worker_main(void *args){
 		/*IMPLEMENT IMAGE PROCESSING HERE*/
 		enum img_opcode opcode=curreq.req.img_op;
 		struct image * postop;
-		sync_printf("starting sem spin\n");
+		//sync_printf("starting sem spin\n");
 		sem_wait(db_mutex[curreq.req.img_id]);
-		while (my_arr!=counters[curreq.req.img_id*2+1]){
+		while (my_arr!=counters[(curreq.req.img_id*2)+1]){
 			sem_post(db_mutex[curreq.req.img_id]);
 			sem_wait(db_mutex[curreq.req.img_id]);
 		}
+
+		DEBUG_PRINTF("T%d Op on %ld\n", targs->thread_id, curreq.req.img_id);
+
 		//do the operation
 		//otherwise signal the mutex and wait again.
-		sync_printf("starting op\n");
+		//sync_printf("starting op on IMG %ld\n", curreq.req.img_id);
 		sem_wait(img_mutex);
 		struct image * cur_image = img_arr[curreq.req.img_id];
 		sem_post(img_mutex);
-		sync_printf("img accessed thread %d\n",targs->thread_id);
+		//sync_printf("trying cur_image->width thread %d\n",targs->thread_id);
 		switch(opcode){
 		case IMG_ROT90CLKW:
-			printf("ROT CALLED\n");
+			//printf("ROT CALLED\n");
 			postop=rotate90Clockwise(cur_image,NULL);
 			break;
 		case IMG_BLUR:
-			printf("BLUR CALLED\n");
+			//printf("BLUR CALLED\n");
 			postop=blurImage(cur_image);
 			break;
 		case IMG_SHARPEN:
-			printf("SHARPEN CALLED\n");
+			//printf("SHARPEN CALLED\n");
 			postop=sharpenImage(cur_image);
 			break;
 		case IMG_VERTEDGES:
-			printf("VERT CALLED\n");
+			//printf("VERT CALLED\n");
 			postop=detectVerticalEdges(cur_image);
 			break;
 		case IMG_HORIZEDGES:
-			printf("HORIZ CALLED \n");
+			//printf("HORIZ CALLED \n");
 			postop=detectHorizontalEdges(cur_image);
 			break;
 		case IMG_RETRIEVE:
-			printf("RETRIEVE CALLED\n");
+			//printf("RETRIEVE CALLED\n");
 			break;
 		default:
 			printf("ERROR: OPCODE NOT DETECTED\n");
 		}
-		sync_printf("replacing old img\n");
+		//sync_printf("replacing old img\n");
 		//prep the response
 		uint64_t imgcode=curreq.req.img_id;
 		// **CRIT SEC** ADDING OR MODIFYING IMG DB
 		sem_wait(img_mutex);
 		if(opcode!=IMG_RETRIEVE && !curreq.req.overwrite){
-			sync_printf("before malloc\n");
+			//sync_printf("before malloc\n");
 			img_arr=realloc(img_arr,(num_imgs+1)*sizeof(struct image*));
 			db_mutex=realloc(db_mutex,(num_imgs+1)*sizeof(sem_t *));
 			counters=realloc(counters,(num_imgs+1)*2*sizeof(int));
@@ -352,8 +361,9 @@ int worker_main(void *args){
 			img_arr[num_imgs]=postop;
 			imgcode=num_imgs;
 			num_imgs++;
-			sync_printf("after malloc \n");
+			//sync_printf("after malloc \n");
 		}else if(opcode!=IMG_RETRIEVE){
+			//
 			deleteImage(cur_image);
 			img_arr[curreq.req.img_id]=postop;
 		}
@@ -364,13 +374,13 @@ int worker_main(void *args){
 		clientres.ack=0;
 		clientres.img_id=imgcode;
 		//add image response stuff, id and whatnot
-		sync_printf("sending response\n");
+		//sync_printf("sending response for IMG %ld\n", curreq.req.img_id);
 		sem_wait(ret_mutex);
 		if(opcode==IMG_RETRIEVE){
-			write(conn_socket,(struct response *) &clientres,sizeof(struct response));
+			send(conn_socket,(struct response *) &clientres,sizeof(struct response),0);
 			sendImage(cur_image,conn_socket);
 		}else{
-			write(conn_socket,(struct response *) &clientres,sizeof(struct response));
+			send(conn_socket,(struct response *) &clientres,sizeof(struct response),0);
 		}
 		sem_post(ret_mutex);
 
@@ -389,14 +399,13 @@ int worker_main(void *args){
 		double comptime=(TSPEC_TO_DOUBLE(completion));
 		sync_printf("T%d R%d:%.6f,%s,%d,%ld,%ld,%.6f,%.6f,%.6f\n",targs->thread_id,id,sent_time,op,ow,clim,imgcode,rectime,starttime,comptime);
 		dump_queue_status(queue);
-		printf("EOW WORKER\n");
+		DEBUG_PRINTF("EOW WORKER\n");
 	}
 	return 0;
 }
 /* Main function to handle connection with the client. This function
  * takes in input conn_socket and returns only when the connection
  * with the client is interrupted. */
-
 
 void handle_connection(int conn_socket, struct connection_params conn_params)
 {
@@ -444,7 +453,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 
 	struct meta_req clientreq;
 	while(1){
-		data=read(conn_socket, &clientreq.req,client_size);
+		data=recv(conn_socket, &clientreq.req, client_size,0);
 		if(data<=0){
 			break;
 		}
@@ -454,13 +463,14 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 			//REGISTER
 			// **CRIT SEC** ADDING TO IMG DB
 			sem_wait(img_mutex);
-			printf("before malloc\n");
+			DEBUG_PRINTF("before malloc\n");
 			struct timespec start, completion;
 			clock_gettime(CLOCK_MONOTONIC,&start);
 			img_arr=realloc(img_arr,(num_imgs+1)*sizeof(struct image*));
 			db_mutex=realloc(db_mutex,(num_imgs+1)*sizeof(sem_t*));
 			counters=realloc(counters,(num_imgs+1)*2*sizeof(int));
-			counters[num_imgs*2]=counters[num_imgs*2+1]=0;
+			counters[num_imgs*2]=0;
+			counters[(num_imgs*2)+1]=0;
 			db_mutex[num_imgs]=(sem_t*)malloc(sizeof(sem_t));
 			int retval=sem_init(db_mutex[num_imgs],0,1);
 
@@ -468,12 +478,12 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 				ERROR_INFO();
 				perror("Unable to init db_mutex");
 			}
-			printf("after malloc \n");
+			DEBUG_PRINTF("after malloc \n");
 			img_arr[num_imgs]=recvImage(conn_socket);
 			sem_post(img_mutex);
 
 			struct response regresp={clientreq.req.req_id,num_imgs,0};
-			write(conn_socket, &regresp,sizeof(struct response));
+			send(conn_socket, &regresp, sizeof(struct response),0);
 			clock_gettime(CLOCK_MONOTONIC,&completion);
 			double sent_time=TSPEC_TO_DOUBLE(clientreq.req.req_timestamp);
 			const char* op=OPCODE_TO_STRING(clientreq.req.img_op);
@@ -494,7 +504,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 			rej_res.req_id=clientreq.req.req_id;
 			rej_res.img_id=clientreq.req.img_id;
 			rej_res.ack=1;
-			write(conn_socket, &rej_res,sizeof(struct response));
+			send(conn_socket, &rej_res,sizeof(struct response),0);
 			sync_printf("X%lu:%.6f,%.6f\n",clientreq.req.req_id, \
 			       TSPEC_TO_DOUBLE(clientreq.req.req_timestamp), \
 			       TSPEC_TO_DOUBLE(clientreq.reciept));
@@ -502,25 +512,23 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
 		
 	}
 
-	return;
-
 	/* Ask the worker thead to terminate */
 	printf("INFO: Asserting termination flag for worker thread...\n");
 	
 	for(i=0;i<conn_params.thread_num;i++){
 		params[i]->worker_done = 1;
-		waitpid(-1, NULL, 0);	
 		sem_post(queue_notify);
+		waitpid(-1, NULL, 0);
+		printf("INFO: Worker thread with id %d exited.\n",i);
 	}
 
 
 	/* Just in case the thread is stuck on the notify semaphore,
 	 * wake it up */
-	
+
 
 	/* Wait for orderly termination of the worker thread */
-	
-	printf("INFO: Worker thread exited.\n");
+
 	free(the_queue);
 	for(i=0;i<conn_params.thread_num;i++){
 		free(stacks[i]);
@@ -544,6 +552,7 @@ void handle_connection(int conn_socket, struct connection_params conn_params)
  * server. The server must accept in input a command line parameter
  * with the <port number> to bind the server to. */
 int main (int argc, char ** argv) {
+
 	int sockfd, retval, accepted, optval;
 	in_port_t socket_port;
 	struct sockaddr_in addr, client;
@@ -654,14 +663,12 @@ int main (int argc, char ** argv) {
 	}
 
 	/* Initialize queue protection variables. DO NOT TOUCH. */
-	arr_mutex = (sem_t *)malloc(sizeof(sem_t));
 	queue_mutex = (sem_t *)malloc(sizeof(sem_t));
 	queue_notify = (sem_t *)malloc(sizeof(sem_t));
 	printf_mutex = (sem_t *)malloc(sizeof(sem_t));
 	img_mutex = (sem_t *)malloc(sizeof(sem_t));
 	ret_mutex=(sem_t*)malloc(sizeof(sem_t));
 	retval = sem_init(queue_mutex, 0, 1);
-	sem_init(arr_mutex,0,1);
 	if(sem_init(printf_mutex,0,1)<0){
 	  ERROR_INFO();
 	  perror("Unable to init printf mutex");
@@ -692,9 +699,20 @@ int main (int argc, char ** argv) {
 
 	/* Ready to handle the new connection with the client. */
 	handle_connection(accepted,conn_params);
+	DEBUG_PRINTF("Starting frees\n")
 	free(queue_mutex);
 	free(queue_notify);
 	free(printf_mutex);
+	free(ret_mutex);
+	free(img_mutex);
+	for(int i=0;i<num_imgs;i++){
+		deleteImage(img_arr[i]);
+		free(db_mutex[i]);
+	}
+	free(img_arr);
+	free(db_mutex);
+	DEBUG_PRINTF("DONE W HANDCONN\n")
+	DEBUG_PRINTF("AAAAAAA\n")
 	close(sockfd);
 
 
